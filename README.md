@@ -1,0 +1,1 @@
+# battery-cooling-explainer
