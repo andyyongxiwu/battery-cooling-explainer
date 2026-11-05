@@ -34,7 +34,10 @@ function render(){
  const result=model.predict(state.flow,state.tin,state.count);state.result=result;
  const n=model.meta.pointsPerSide,[min,max]=scale(),upper=result.field.subarray(0,n),lower=result.field.subarray(n);
  drawField($('upper'),upper,min,max);drawField($('lower'),lower,min,max);
- drawField($('vehicleField'),state.activeSide?lower:upper,min,max);
+ // Rotate only the installation view; model coordinates and exported fields stay unchanged.
+ const vehicle=$('vehicleField'),vc=vehicle.getContext('2d');
+ vc.clearRect(0,0,vehicle.width,vehicle.height);vc.save();vc.translate(vehicle.width,0);vc.rotate(Math.PI/2);
+ vc.drawImage($(state.activeSide?'lower':'upper'),0,0,vehicle.height,vehicle.width);vc.restore();
  $('activeHeight').textContent=state.activeSide?'z = 8.5 mm':'z = 86.5 mm';
  for(const [id,side] of [['viewUpper',0],['viewLower',1]]){$(id).classList.toggle('active',state.activeSide===side);$(id).setAttribute('aria-pressed',String(state.activeSide===side));}
  const a=statistics(upper),b=statistics(lower);
@@ -137,7 +140,15 @@ function exportPNG(){
  for(let side=0;side<2;side++){const x=35+side*690;ctx.fillStyle='#263b4d';ctx.font='bold 18px Arial';ctx.fillText((side?'Lower · z=8.5 mm':'Upper · z=86.5 mm'),x,120);ctx.drawImage($(side?'lower':'upper'),x,140,620,497);const stats=statistics(state.result.field.subarray(side*20769,(side+1)*20769));ctx.font='15px Arial';ctx.fillText(`Peak ${stats.max.toFixed(2)}°C  |  Sample mean ${stats.mean.toFixed(2)}°C`,x,669);}
  ctx.font='13px Arial';ctx.fillStyle='#8395a2';const [min,max]=scale();ctx.fillText(`Shared color scale: ${min.toFixed(1)} to ${max.toFixed(1)}°C. Internal cut-plane fields; simulation-validated model v1.0.`,35,720);c.toBlob(b=>download(b,'battery_cooling_prediction.png'),'image/png');
 }
-function inspectPoint(e,side){if(!state.result)return;const rect=e.currentTarget.getBoundingClientRect(),x=Math.min(160,Math.max(0,Math.floor((e.clientX-rect.left)/rect.width*161))),y=Math.min(128,Math.max(0,128-Math.floor((e.clientY-rect.top)/rect.height*129))),v=state.result.field[side*20769+y*161+x];$(side?'lowerReadout':'upperReadout').textContent=`x ${(-.3+x*.00375).toFixed(4)} m · y ${(y*.00375).toFixed(4)} m · ${v.toFixed(3)}°C`;}
+function inspectPoint(e,side,rotated=false){
+ if(!state.result)return;
+ const rect=e.currentTarget.getBoundingClientRect(),screenX=(e.clientX-rect.left)/rect.width,screenY=(e.clientY-rect.top)/rect.height;
+ // Invert the clockwise quarter-turn used by the vehicle canvas.
+ const u=rotated?screenY:screenX,v=rotated?1-screenX:screenY;
+ const x=Math.min(160,Math.max(0,Math.floor(u*161))),y=Math.min(128,Math.max(0,128-Math.floor(v*129)));
+ const value=state.result.field[side*20769+y*161+x];
+ $(side?'lowerReadout':'upperReadout').textContent=`x ${(-.3+x*.00375).toFixed(4)} m · y ${(y*.00375).toFixed(4)} m · ${value.toFixed(3)}°C`;
+}
 function setup(){
  $('coefficients').innerHTML=Array.from({length:5},(_,k)=>`<button id="coefficient${k}" class="coefficient" aria-label="Inspect coefficient ${k+1}"><span class="bar-track"><span class="bar"></span></span><span class="value"><span class="index">a${k+1}</span><span class="number">—</span></span></button>`).join('');
  $('modeTiles').innerHTML=Array.from({length:6},(_,j)=>`<button class="mode-tile" id="${j===0?'meanTile':'modeTile'+(j-1)}" aria-label="Inspect ${j===0?'mean field':'POD mode '+j}"><canvas id="modeCanvas${j}" width="161" height="129"></canvas><span>${j===0?'μ':'φ'+j}</span></button>`).join('');
@@ -162,7 +173,7 @@ function setup(){
  $('csvButton').onclick=exportCSV;$('pngButton').onclick=exportPNG;
  $('shareButton').onclick=async()=>{const url=new URL(location.href);url.searchParams.set('flow',state.flow.toFixed(6));url.searchParams.set('tin',state.tin.toFixed(2));url.searchParams.set('modes',state.count);try{await navigator.clipboard.writeText(url.toString());toast('Link with current inputs copied.');}catch{toast('Copy this page URL after updating your inputs.');history.replaceState(null,'',url.toString());}};
  $('upper').onpointermove=e=>inspectPoint(e,0);$('lower').onpointermove=e=>inspectPoint(e,1);
- $('vehicleField').onpointermove=e=>{inspectPoint(e,state.activeSide);$('vehicleReadout').textContent=$(state.activeSide?'lowerReadout':'upperReadout').textContent;};
+ $('vehicleField').onpointermove=e=>{inspectPoint(e,state.activeSide,true);$('vehicleReadout').textContent=$(state.activeSide?'lowerReadout':'upperReadout').textContent;};
  $('viewUpper').onclick=()=>{state.activeSide=0;scheduleRender();};$('viewLower').onclick=()=>{state.activeSide=1;scheduleRender();};
  $('inspectField').onclick=()=>{if(!state.ready)return;$('helpTitle').textContent='Predicted internal cut-plane temperatures';$('helpBody').replaceChildren();const range=scale();for(let side=0;side<2;side++){const p=document.createElement('p');p.textContent=(side?'Lower · z = 8.5 mm':'Upper · z = 86.5 mm')+' · shared scale '+range[0]+'–'+range[1]+'°C';const c=document.createElement('canvas');c.width=644;c.height=516;drawField(c,state.result.field.subarray(side*20769,(side+1)*20769),...range);$('helpBody').append(p,c);}openDialog('helpDialog');};
  $('sweepButton').onclick=()=>{
