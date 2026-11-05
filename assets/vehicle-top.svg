@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="600" viewBox="0 0 340 600">
+<defs>
+ <linearGradient id="body" x1="0" x2="1"><stop stop-color="#8397a9" stop-opacity=".14"/><stop offset=".12" stop-color="#edf3f7" stop-opacity=".7"/><stop offset=".45" stop-color="#b6c9d6" stop-opacity=".1"/><stop offset=".85" stop-color="#edf3f7" stop-opacity=".68"/><stop offset="1" stop-color="#8098ac" stop-opacity=".22"/></linearGradient>
+ <linearGradient id="glass" x2=".3" y2="1"><stop stop-color="#c9dce8" stop-opacity=".65"/><stop offset="1" stop-color="#f1f7fb" stop-opacity=".08"/></linearGradient>
+ <linearGradient id="metal"><stop stop-color="#c7d2da"/><stop offset=".12" stop-color="#fafcfd"/><stop offset=".5" stop-color="#d1dce4"/><stop offset=".88" stop-color="#f8fbfd"/><stop offset="1" stop-color="#9cabb8"/></linearGradient>
+ <linearGradient id="tire"><stop stop-color="#83909b"/><stop offset=".2" stop-color="#465765"/><stop offset=".5" stop-color="#6d7c87"/><stop offset=".85" stop-color="#465765"/><stop offset="1" stop-color="#a3aeb7"/></linearGradient>
+ <filter id="shadow" x="-40%" y="-10%" width="180%" height="125%"><feGaussianBlur stdDeviation="7"/></filter>
+ <filter id="packShadow" x="-20%" y="-20%" width="150%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#31465b" flood-opacity=".22"/></filter>
+ <pattern id="mesh" width="12" height="12" patternUnits="userSpaceOnUse"><path d="M0 0H12V12M0 0L12 12" fill="none" stroke="#7891a7" stroke-opacity=".12" stroke-width=".5"/></pattern>
+</defs>
+<ellipse cx="170" cy="312" rx="118" ry="266" fill="#586e82" opacity=".08" filter="url(#shadow)"/>
+<!-- Four road wheels, seen strictly from above. -->
+<g fill="url(#tire)" opacity=".65" stroke="#697b8a" stroke-width=".7">
+ <rect x="36" y="132" width="25" height="72" rx="8"/><rect x="279" y="132" width="25" height="72" rx="8"/>
+ <rect x="36" y="425" width="25" height="72" rx="8"/><rect x="279" y="425" width="25" height="72" rx="8"/>
+</g>
+<g fill="none" stroke="#dce5eb" opacity=".65" stroke-width="1"><path d="M42 140v55m6-57v59m7-57v55M285 140v55m6-57v59m7-57v55M42 433v55m6-57v59m7-57v55M285 433v55m6-57v59m7-57v55"/></g>
+<!-- Ghosted chassis and suspension. -->
+<g stroke="#8298aa" fill="none" opacity=".32"><path d="M62 168h216M62 460h216" stroke-width="9"/><path d="M67 166l25 20m-25-20 25-20m181 20-25 20m25-20-25-20M67 460l25 20m-25-20 25-20m181 20-25 20m25-20-25-20" stroke-width="4"/><path d="M70 195v238M270 195v238" stroke-width="7"/><path d="M74 221h192M74 432h192" stroke-width="4"/></g>
+<g opacity=".25" fill="#c3d3df" stroke="#7e95a8"><rect x="127" y="138" width="86" height="45" rx="10"/><rect x="137" y="445" width="66" height="38" rx="9"/><path d="M141 147v26m8-26v26m8-26v26m8-26v26m8-26v26m8-26v26m8-26v26m8-26v26" fill="none"/></g>
+<!-- Transparent body shell. -->
+<path d="M170 21C117 21 87 55 70 102L54 162Q46 196 47 247V425Q48 500 76 543Q101 577 170 581Q239 577 264 543Q292 500 293 425V247Q294 196 286 162L270 102C253 55 223 21 170 21Z" fill="url(#body)" stroke="#9bb0c0" stroke-opacity=".66" stroke-width="1.3"/>
+<path d="M170 29C120 29 94 63 78 108L63 165Q55 199 56 247V425Q57 493 83 536Q107 568 170 572Q233 568 257 536Q283 493 284 425V247Q285 199 277 165L262 108C246 63 220 29 170 29Z" fill="url(#mesh)" stroke="#dce6ed" stroke-width="2"/>
+<!-- Hood and roof perimeter: pale glass lets the floor pack remain prominent. -->
+<path d="M87 113Q170 87 253 113L266 174Q170 148 74 174Z" fill="url(#glass)" stroke="#91a9bc" stroke-opacity=".33"/>
+<path d="M76 181Q170 151 264 181L251 236Q170 216 89 236Z" fill="url(#glass)" stroke="#809bb0" stroke-opacity=".45"/>
+<path d="M91 240L88 414Q170 433 252 414L249 240Q170 220 91 240Z" fill="#eaf2f7" fill-opacity=".08" stroke="#9cb3c4" stroke-opacity=".4"/>
+<path d="M88 420Q170 440 252 420L265 480Q170 502 75 480Z" fill="url(#glass)" stroke="#8ba5b8" stroke-opacity=".4"/>
+<path d="M77 488Q170 511 263 488L250 534Q170 559 90 534Z" fill="url(#body)" stroke="#9eb2c0" stroke-opacity=".4"/>
+<!-- Side windows and cabin structure. -->
+<g fill="#c7dce9" fill-opacity=".18" stroke="#849fb3" stroke-opacity=".34"><path d="M65 211l18 24-2 99-19 12Z"/><path d="M62 355l19-12 0 71-18 37Z"/><path d="M275 211l-18 24 2 99 19 12Z"/><path d="M278 355l-19-12 0 71 18 37Z"/></g>
+<g stroke="#829bad" stroke-opacity=".27" fill="none"><path d="M83 231Q170 204 257 231M81 337h178M81 415h178" stroke-width="3"/><path d="M63 349h17m180 0h17M65 271h11m188 0h11" stroke-width="2"/><circle cx="115" cy="222" r="13" stroke-width="2"/><path d="M105 217h20m-10 0v14"/></g>
+<g fill="#d6e1e9" fill-opacity=".23" stroke="#9eafbd" stroke-opacity=".25"><rect x="98" y="243" width="53" height="72" rx="12"/><rect x="189" y="243" width="53" height="72" rx="12"/><rect x="99" y="353" width="142" height="53" rx="9"/></g>
+<!-- Opaque battery enclosure; dynamic heatmap is layered in the inset. -->
+<g filter="url(#packShadow)"><rect x="61" y="240" width="218" height="180" rx="6" fill="url(#metal)" stroke="#8a9dab" stroke-width="1"/><rect x="66" y="245" width="208" height="170" rx="4" fill="#e7edf1" stroke="#fdfefe"/><rect x="68" y="248" width="204" height="163.2" rx="2" fill="#c4d1dc"/></g>
+<g fill="#eff4f7" stroke="#899daa" stroke-width=".6"><circle cx="64" cy="247" r="2.2"/><circle cx="276" cy="247" r="2.2"/><circle cx="64" cy="413" r="2.2"/><circle cx="276" cy="413" r="2.2"/><circle cx="64" cy="330" r="2.2"/><circle cx="276" cy="330" r="2.2"/></g>
+<path d="M170 420v26" stroke="#ed9a50" stroke-width="4" opacity=".75"/><path d="M174 420v23" stroke="#ed9a50" stroke-width="2" opacity=".65"/>
+<!-- Lamps, bumpers and highlights. -->
+<g fill="#d7ebf5" fill-opacity=".65" stroke="#91afc3" stroke-opacity=".35"><path d="M86 87l-9 29 31-9 8-21Z"/><path d="M254 87l9 29-31-9-8-21Z"/></g>
+<g fill="none" stroke-linecap="round"><path d="M125 46Q170 35 215 46M104 548Q170 565 236 548" stroke="#b3c7d6" stroke-width="3" opacity=".5"/><path d="M63 206v219M277 206v219" stroke="white" stroke-width="2.5" opacity=".75"/><path d="M92 534l27 8m129-8-27 8" stroke="#d7a9ac" stroke-width="4" opacity=".4"/></g>
+</svg>

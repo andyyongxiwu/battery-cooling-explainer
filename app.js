@@ -1,6 +1,6 @@
 import {ThermalModel,statistics,errors} from './model.js';
 const $=id=>document.getElementById(id), model=new ThermalModel();
-const state={flow:.0115,tin:29.3,count:5,autoScale:false,focused:-1,result:null,ready:false,playing:false,validationToken:0};
+const state={flow:.0115,tin:29.3,count:5,autoScale:false,activeSide:0,focused:-1,result:null,ready:false,playing:false,validationToken:0};
 const palette=[[0,48,18,59],[.13,69,102,223],[.25,35,173,234],[.4,55,215,136],[.55,164,227,56],[.7,246,196,54],[.82,249,121,30],[.93,211,59,19],[1,122,4,3]];
 function color(t,kind='temperature'){
  t=Math.max(0,Math.min(1,t));
@@ -25,7 +25,7 @@ function openDialog(id){if(!$(id).open)$(id).showModal();}
 function stopSweep(){state.playing=false;$('sweepButton').innerHTML='<span>▶</span> Play sweep';}
 function updateControls(){
  $('flow').value=state.flow;$('tin').value=state.tin;$('flowNumber').value=state.flow.toFixed(6);$('tinNumber').value=state.tin.toFixed(2);
- for(const [id,p,accent,muted] of [['flow',(state.flow-.005)/.015,'#45a622','#dae7d7'],['tin',(state.tin-25)/10,'#159b9e','#d7e9e8']])$(id).style.background=`linear-gradient(to right,${accent} ${p*100}%,${muted} ${p*100}%)`;
+ for(const [id,p,accent,muted] of [['flow',(state.flow-.005)/.015,'#2e88b9','#dceaf2'],['tin',(state.tin-25)/10,'#178c9e','#e0edf0']])$(id).style.background=`linear-gradient(to right,${accent} ${p*100}%,${muted} ${p*100}%)`;
  $('flowNumber').removeAttribute('aria-invalid');$('tinNumber').removeAttribute('aria-invalid');
 }
 let scheduled=false;
@@ -34,6 +34,9 @@ function render(){
  const result=model.predict(state.flow,state.tin,state.count);state.result=result;
  const n=model.meta.pointsPerSide,[min,max]=scale(),upper=result.field.subarray(0,n),lower=result.field.subarray(n);
  drawField($('upper'),upper,min,max);drawField($('lower'),lower,min,max);
+ drawField($('vehicleField'),state.activeSide?lower:upper,min,max);
+ $('activeHeight').textContent=state.activeSide?'z = 8.5 mm':'z = 86.5 mm';
+ for(const [id,side] of [['viewUpper',0],['viewLower',1]]){$(id).classList.toggle('active',state.activeSide===side);$(id).setAttribute('aria-pressed',String(state.activeSide===side));}
  const a=statistics(upper),b=statistics(lower);
  for(const [id,v] of [['upperMax',a.max],['lowerMax',b.max],['upperMean',a.mean],['lowerMean',b.mean]])$(id).innerHTML=temperatureHTML(v);
  $('u1').textContent=signed(result.u[0],3);$('u2').textContent=signed(result.u[1],3);
@@ -49,7 +52,7 @@ function render(){
   $('modeTile'+k).classList.toggle('disabled',k>=state.count);
  }
  for(let k=-1;k<5;k++){
-  const values=k<0?model.mean.subarray(0,n):model.modes.subarray(k*n*2,k*n*2+n);
+  const values=k<0?model.mean.subarray(state.activeSide*n,(state.activeSide+1)*n):model.modes.subarray(k*n*2+state.activeSide*n,k*n*2+(state.activeSide+1)*n);
   let amplitude=0;if(k>=0)for(const v of values)amplitude=Math.max(amplitude,Math.abs(v));
   drawField($('modeCanvas'+(k+1)),values,k<0?min:-amplitude,k<0?max:amplitude,k<0?'temperature':'mode');
  }
@@ -159,6 +162,9 @@ function setup(){
  $('csvButton').onclick=exportCSV;$('pngButton').onclick=exportPNG;
  $('shareButton').onclick=async()=>{const url=new URL(location.href);url.searchParams.set('flow',state.flow.toFixed(6));url.searchParams.set('tin',state.tin.toFixed(2));url.searchParams.set('modes',state.count);try{await navigator.clipboard.writeText(url.toString());toast('Link with current inputs copied.');}catch{toast('Copy this page URL after updating your inputs.');history.replaceState(null,'',url.toString());}};
  $('upper').onpointermove=e=>inspectPoint(e,0);$('lower').onpointermove=e=>inspectPoint(e,1);
+ $('vehicleField').onpointermove=e=>{inspectPoint(e,state.activeSide);$('vehicleReadout').textContent=$(state.activeSide?'lowerReadout':'upperReadout').textContent;};
+ $('viewUpper').onclick=()=>{state.activeSide=0;scheduleRender();};$('viewLower').onclick=()=>{state.activeSide=1;scheduleRender();};
+ $('inspectField').onclick=()=>{if(!state.ready)return;$('helpTitle').textContent='Predicted internal cut-plane temperatures';$('helpBody').replaceChildren();const range=scale();for(let side=0;side<2;side++){const p=document.createElement('p');p.textContent=(side?'Lower · z = 8.5 mm':'Upper · z = 86.5 mm')+' · shared scale '+range[0]+'–'+range[1]+'°C';const c=document.createElement('canvas');c.width=644;c.height=516;drawField(c,state.result.field.subarray(side*20769,(side+1)*20769),...range);$('helpBody').append(p,c);}openDialog('helpDialog');};
  $('sweepButton').onclick=()=>{
   if(!state.ready)return;if(state.playing){stopSweep();return;}state.playing=true;$('sweepButton').innerHTML='<span>Ⅱ</span> Pause sweep';const started=performance.now();let last=0;
   const step=now=>{if(!state.playing)return;if(now-last>65){last=now;const t=(now-started)/9000;state.flow=.005+.015*(.5-.5*Math.cos(t*Math.PI*2));state.tin=30+4.8*Math.sin(t*Math.PI*2*.7);updateControls();scheduleRender();}requestAnimationFrame(step);};requestAnimationFrame(step);
