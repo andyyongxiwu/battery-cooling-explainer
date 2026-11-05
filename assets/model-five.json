@@ -1,0 +1,393 @@
+{
+  "version": "2.0-five-input",
+  "method": "POD + Gaussian RBF with affine tail",
+  "centers": 230,
+  "modes": 24,
+  "pointsPerSide": 20769,
+  "nx": 161,
+  "ny": 129,
+  "epsilon": 0.25,
+  "layout": [
+    {
+      "key": "centers",
+      "shape": [
+        230,
+        5
+      ],
+      "length": 1150
+    },
+    {
+      "key": "weights",
+      "shape": [
+        230,
+        24
+      ],
+      "length": 5520
+    },
+    {
+      "key": "affine",
+      "shape": [
+        6,
+        24
+      ],
+      "length": 144
+    },
+    {
+      "key": "mean",
+      "shape": [
+        41538
+      ],
+      "length": 41538
+    },
+    {
+      "key": "modes",
+      "shape": [
+        24,
+        41538
+      ],
+      "length": 996912
+    }
+  ],
+  "testCases": [
+    {
+      "id": "GTE001",
+      "flow": 0.016156,
+      "tin": 31.87,
+      "soc": 0.1868,
+      "crate": 1.29,
+      "ambient": 14.16
+    },
+    {
+      "id": "GTE002",
+      "flow": 0.010814,
+      "tin": 26.08,
+      "soc": 0.5967,
+      "crate": 3.52,
+      "ambient": 11.3
+    },
+    {
+      "id": "GTE003",
+      "flow": 0.010442,
+      "tin": 28.58,
+      "soc": 0.2704,
+      "crate": 3.47,
+      "ambient": 25.36
+    },
+    {
+      "id": "GTE004",
+      "flow": 0.009601,
+      "tin": 32.36,
+      "soc": 0.3519,
+      "crate": 2.24,
+      "ambient": 20.88
+    },
+    {
+      "id": "GTE005",
+      "flow": 0.005786,
+      "tin": 28.11,
+      "soc": 0.5278,
+      "crate": 1.63,
+      "ambient": 37.98
+    },
+    {
+      "id": "GTE006",
+      "flow": 0.012236,
+      "tin": 27.93,
+      "soc": 0.3109,
+      "crate": 3.82,
+      "ambient": 24.01
+    },
+    {
+      "id": "GTE007",
+      "flow": 0.01685,
+      "tin": 34.65,
+      "soc": 0.1617,
+      "crate": 4.94,
+      "ambient": 36.45
+    },
+    {
+      "id": "GTE008",
+      "flow": 0.008264,
+      "tin": 29.68,
+      "soc": 0.4144,
+      "crate": 4.85,
+      "ambient": 29.25
+    },
+    {
+      "id": "GTE009",
+      "flow": 0.008437,
+      "tin": 25.48,
+      "soc": 0.2039,
+      "crate": 3.01,
+      "ambient": 35.38
+    },
+    {
+      "id": "GTE010",
+      "flow": 0.01124,
+      "tin": 32.09,
+      "soc": 0.453,
+      "crate": 2.61,
+      "ambient": 37.59
+    },
+    {
+      "id": "GTE011",
+      "flow": 0.015128,
+      "tin": 33.42,
+      "soc": 0.4965,
+      "crate": 4.45,
+      "ambient": 18.62
+    },
+    {
+      "id": "GTE012",
+      "flow": 0.005243,
+      "tin": 32.68,
+      "soc": 0.3727,
+      "crate": 4.63,
+      "ambient": 31.8
+    },
+    {
+      "id": "GTE013",
+      "flow": 0.013865,
+      "tin": 31.2,
+      "soc": 0.2316,
+      "crate": 3.29,
+      "ambient": 29.73
+    },
+    {
+      "id": "GTE014",
+      "flow": 0.014545,
+      "tin": 28.92,
+      "soc": 0.2239,
+      "crate": 3.65,
+      "ambient": 26.26
+    },
+    {
+      "id": "GTE015",
+      "flow": 0.006239,
+      "tin": 33.61,
+      "soc": 0.5765,
+      "crate": 4.01,
+      "ambient": 27.05
+    },
+    {
+      "id": "GTE016",
+      "flow": 0.010243,
+      "tin": 31.52,
+      "soc": 0.5108,
+      "crate": 2.04,
+      "ambient": 36.06
+    },
+    {
+      "id": "GTE017",
+      "flow": 0.013521,
+      "tin": 29.39,
+      "soc": 0.391,
+      "crate": 2.83,
+      "ambient": 12.17
+    },
+    {
+      "id": "GTE018",
+      "flow": 0.006787,
+      "tin": 27.32,
+      "soc": 0.2565,
+      "crate": 4.16,
+      "ambient": 10.09
+    },
+    {
+      "id": "GTE019",
+      "flow": 0.01872,
+      "tin": 28.38,
+      "soc": 0.2913,
+      "crate": 1.09,
+      "ambient": 21.32
+    },
+    {
+      "id": "GTE020",
+      "flow": 0.006955,
+      "tin": 30.78,
+      "soc": 0.3232,
+      "crate": 1.18,
+      "ambient": 17.4
+    },
+    {
+      "id": "GTE021",
+      "flow": 0.006029,
+      "tin": 30.66,
+      "soc": 0.5516,
+      "crate": 1.51,
+      "ambient": 19.24
+    },
+    {
+      "id": "GTE022",
+      "flow": 0.019542,
+      "tin": 34.49,
+      "soc": 0.548,
+      "crate": 1.32,
+      "ambient": 33.14
+    },
+    {
+      "id": "GTE023",
+      "flow": 0.008988,
+      "tin": 31.37,
+      "soc": 0.4431,
+      "crate": 2.59,
+      "ambient": 28.35
+    },
+    {
+      "id": "GTE024",
+      "flow": 0.009813,
+      "tin": 29.95,
+      "soc": 0.1388,
+      "crate": 1.88,
+      "ambient": 34.3
+    },
+    {
+      "id": "GTE025",
+      "flow": 0.005416,
+      "tin": 30.23,
+      "soc": 0.3389,
+      "crate": 4.29,
+      "ambient": 20.23
+    },
+    {
+      "id": "GTE026",
+      "flow": 0.018534,
+      "tin": 29.03,
+      "soc": 0.102,
+      "crate": 4.77,
+      "ambient": 15.18
+    },
+    {
+      "id": "GTE027",
+      "flow": 0.013126,
+      "tin": 27.67,
+      "soc": 0.2401,
+      "crate": 3.95,
+      "ambient": 27.96
+    },
+    {
+      "id": "GTE028",
+      "flow": 0.00764,
+      "tin": 25.82,
+      "soc": 0.5688,
+      "crate": 3.35,
+      "ambient": 22.71
+    },
+    {
+      "id": "GTE029",
+      "flow": 0.007296,
+      "tin": 32.99,
+      "soc": 0.4672,
+      "crate": 1.45,
+      "ambient": 31.5
+    },
+    {
+      "id": "GTE030",
+      "flow": 0.012528,
+      "tin": 25.15,
+      "soc": 0.116,
+      "crate": 1.79,
+      "ambient": 24.47
+    },
+    {
+      "id": "GTE031",
+      "flow": 0.011708,
+      "tin": 30.35,
+      "soc": 0.164,
+      "crate": 3.71,
+      "ambient": 30.88
+    },
+    {
+      "id": "GTE032",
+      "flow": 0.01779,
+      "tin": 26.3,
+      "soc": 0.1278,
+      "crate": 2.19,
+      "ambient": 38.9
+    },
+    {
+      "id": "GTE033",
+      "flow": 0.005022,
+      "tin": 26.93,
+      "soc": 0.2797,
+      "crate": 2.44,
+      "ambient": 23.3
+    },
+    {
+      "id": "GTE034",
+      "flow": 0.006504,
+      "tin": 25.57,
+      "soc": 0.3356,
+      "crate": 4.51,
+      "ambient": 12.33
+    },
+    {
+      "id": "GTE035",
+      "flow": 0.015627,
+      "tin": 34.83,
+      "soc": 0.3809,
+      "crate": 3.19,
+      "ambient": 15.83
+    },
+    {
+      "id": "GTE036",
+      "flow": 0.009252,
+      "tin": 34.05,
+      "soc": 0.4866,
+      "crate": 1.97,
+      "ambient": 33.78
+    },
+    {
+      "id": "GTE037",
+      "flow": 0.007902,
+      "tin": 26.58,
+      "soc": 0.4304,
+      "crate": 2.37,
+      "ambient": 13.5
+    },
+    {
+      "id": "GTE038",
+      "flow": 0.005568,
+      "tin": 33.77,
+      "soc": 0.4014,
+      "crate": 2.71,
+      "ambient": 17.64
+    },
+    {
+      "id": "GTE039",
+      "flow": 0.016735,
+      "tin": 27.15,
+      "soc": 0.1904,
+      "crate": 4.38,
+      "ambient": 16.48
+    },
+    {
+      "id": "GTE040",
+      "flow": 0.007558,
+      "tin": 33.03,
+      "soc": 0.5227,
+      "crate": 2.98,
+      "ambient": 39.39
+    }
+  ],
+  "split": {
+    "train": 230,
+    "validation": 34,
+    "test": 40
+  },
+  "metrics": {
+    "rmse_K": 0.07784396250525537,
+    "mae_K": 0.056149448715247574,
+    "max_abs_K": 0.26597715762940766,
+    "case_rmse_p95_K": 0.1466637192682179,
+    "peak_temperature_mae_K": 0.04754408012077418,
+    "mean_temperature_mae_K": 0.05359707713957214
+  },
+  "SOC_end": 1,
+  "parts": [
+    "model-five-1.bin",
+    "model-five-2.bin",
+    "model-five-3.bin",
+    "model-five-4.bin"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "test_cases": 40,
+  "rmse_K": 0.07784396250529835,
+  "max_abs_K": 0.26597715762911633,
+  "all_five_inputs_change_prediction": true,
+  "mode_pages_checked": 5,
+  "lower_outline_switch": true,
+  "validation_render": true
+}
