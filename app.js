@@ -44,7 +44,6 @@ function render(){
  for(const [id,v] of [['upperMax',a.max],['lowerMax',b.max],['upperMean',a.mean],['lowerMean',b.mean]])$(id).innerHTML=temperatureHTML(v);
  $('u1').textContent=signed(result.u[0],3);$('u2').textContent=signed(result.u[1],3);
  $('scaleMax').textContent=max.toFixed(1)+'°C';$('scaleMid').textContent=((min+max)/2).toFixed(1);$('scaleMin').textContent=min.toFixed(1)+'°C';
- $('runtime').textContent=result.milliseconds.toFixed(2)+' ms inference · '+state.count+'/5 modes';
  $('modeCount').textContent=state.count;$('lessModes').disabled=state.count===1;$('moreModes').disabled=state.count===5;
  const absmax=Math.max(...Array.from(result.coeff).map(Math.abs),1);
  for(let k=0;k<5;k++){
@@ -160,8 +159,8 @@ function setup(){
  }
  $('lessModes').onclick=()=>{state.count=Math.max(1,state.count-1);scheduleRender();};$('moreModes').onclick=()=>{state.count=Math.min(5,state.count+1);scheduleRender();};
  $('scaleToggle').onclick=()=>{state.autoScale=!state.autoScale;$('scaleToggle').textContent=state.autoScale?'Adaptive scale':'Fixed scale';scheduleRender();};
- for(const id of ['validationButton','proofButton'])$(id).onclick=showValidation;
- for(const id of ['notesButton','scopeButton','footerNotes'])$(id).onclick=()=>openDialog('notesDialog');
+ $('validationButton').onclick=showValidation;
+ $('notesButton').onclick=()=>openDialog('notesDialog');
  for(const el of document.querySelectorAll('[data-close]'))el.onclick=()=>el.closest('dialog').close();
  for(const d of document.querySelectorAll('dialog'))d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}});
  $('helpDialog').addEventListener('close',()=>{state.focused=-1;scheduleRender();});
@@ -190,4 +189,4 @@ model.load().then(()=>{
  const params=new URLSearchParams(location.search);const f=Number(params.get('flow')),t=Number(params.get('tin')),k=Number(params.get('modes'));
  if(params.has('flow')&&params.has('tin')&&f>=.005&&f<=.02&&t>=25&&t<=35){state.flow=f;state.tin=t;}if(Number.isInteger(k)&&k>=1&&k<=5)state.count=k;
  updateControls();render();
-}).catch(e=>{$('runtime').textContent='Model unavailable';$('loadError').hidden=false;$('loadError').textContent=e.message+' Refresh to retry.';});
+}).catch(e=>{$('loadError').hidden=false;$('loadError').textContent=e.message+' Refresh to retry.';});
