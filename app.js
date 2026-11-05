@@ -1,3 +1,4 @@
+import {installI18n,tr,getLanguage} from './i18n.js?v=7';
 import {ThermalModel,statistics,errors} from './model.js?v=6';
 const $=id=>document.getElementById(id), model=new ThermalModel();
 const state={flow:.0115,tin:29.3,soc:35,crate:3,ambient:25,page:0,count:24,autoScale:false,activeSide:0,focused:-1,result:null,ready:false,playing:false,validationToken:0};
@@ -86,7 +87,7 @@ function drawNetwork(){
  const inputs=[...document.querySelectorAll('.feature-pill')].map(el=>{const q=el.getBoundingClientRect();return q.top+q.height/2-rect.top;});
  for(let j=0;j<77;j++){
   const a=r.kernel[samples[j]];
-  for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(0,inputs[i]);ctx.bezierCurveTo(w*.18,inputs[i],w*.2,ys[j],centerX,ys[j]);ctx.strokeStyle=i===0?`rgba(92,174,53,${.025+.18*a})`:`rgba(25,153,157,${.025+.18*a})`;ctx.lineWidth=.7;ctx.stroke();}
+  for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(0,inputs[i]);ctx.bezierCurveTo(w*.18,inputs[i],w*.2,ys[j],centerX,ys[j]);ctx.strokeStyle=`rgba(25,153,157,${.025+.18*a})`;ctx.lineWidth=.7;ctx.stroke();}
  }
  let max=0;for(let j=0;j<77;j++)for(let k=0;k<5;k++)if(visibleMode(k)<model.meta.modes)max=Math.max(max,Math.abs(r.kernel[samples[j]]*model.weights[samples[j]*model.meta.modes+visibleMode(k)]));
  for(let k=0;k<5;k++){
@@ -146,10 +147,11 @@ function exportCSV(){
  for(let side=0;side<2;side++)for(let p=0;p<n;p++)lines.push([(side?'lower':'upper'),(-.3+(p%161)*.00375).toFixed(5),(Math.floor(p/161)*.00375).toFixed(5),side?.0085:.0865,state.result.field[side*n+p].toFixed(7)].join(','));
  download(new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'}),`battery_${state.flow.toFixed(6)}_${state.tin.toFixed(2)}_SOC${state.soc}_C${state.crate}_amb${state.ambient}.csv`);toast('Both cut-plane fields exported.');
 }
+function paintText(ctx,text,x,y){ctx.fillText(tr(text),x,y);}
 function exportPNG(){
- if(!state.ready)return;const c=document.createElement('canvas');c.width=1400;c.height=760;const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#263b4d';ctx.font='bold 25px Arial';ctx.fillText('Battery cooling · POD + RBF prediction',35,45);ctx.font='16px Arial';ctx.fillStyle='#627788';ctx.fillText(`Flow ${state.flow.toFixed(6)} kg/s  |  Inlet ${state.tin.toFixed(2)}°C  |  Initial SOC ${state.soc.toFixed(2)}% → 100%`,35,77);ctx.fillText(`Rate ${state.crate.toFixed(2)}C  |  Initial / ambient ${state.ambient.toFixed(2)}°C  |  Endpoint ${(3600*(1-state.soc/100)/state.crate).toFixed(1)} s  |  ${state.count}/${model.meta.modes} modes`,35,101);
- for(let side=0;side<2;side++){const x=35+side*690;ctx.fillStyle='#263b4d';ctx.font='bold 18px Arial';ctx.fillText((side?'Lower · z=8.5 mm':'Upper · z=86.5 mm'),x,120);ctx.drawImage($(side?'lower':'upper'),x,140,620,497);const stats=statistics(state.result.field.subarray(side*20769,(side+1)*20769));ctx.font='15px Arial';ctx.fillText(`Peak ${stats.max.toFixed(2)}°C  |  Sample mean ${stats.mean.toFixed(2)}°C`,x,669);}
- ctx.font='13px Arial';ctx.fillStyle='#8395a2';const [min,max]=scale();ctx.fillText(`Shared color scale: ${min.toFixed(1)} to ${max.toFixed(1)}°C. Internal cut-plane fields; simulation-validated five-input model v2.0.`,35,720);c.toBlob(b=>download(b,'battery_cooling_prediction.png'),'image/png');
+ if(!state.ready)return;const c=document.createElement('canvas');c.width=1400;c.height=760;const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#263b4d';ctx.font='bold 25px Arial';paintText(ctx,'Battery cooling · POD + RBF prediction',35,45);ctx.font='16px Arial';ctx.fillStyle='#627788';paintText(ctx,`Flow ${state.flow.toFixed(6)} kg/s  |  Inlet ${state.tin.toFixed(2)}°C  |  Initial SOC ${state.soc.toFixed(2)}% → 100%`,35,77);paintText(ctx,`Rate ${state.crate.toFixed(2)}C  |  Initial / ambient ${state.ambient.toFixed(2)}°C  |  Endpoint ${(3600*(1-state.soc/100)/state.crate).toFixed(1)} s  |  ${state.count}/${model.meta.modes} modes`,35,101);
+ for(let side=0;side<2;side++){const x=35+side*690;ctx.fillStyle='#263b4d';ctx.font='bold 18px Arial';paintText(ctx,(side?'Lower · z=8.5 mm':'Upper · z=86.5 mm'),x,120);ctx.drawImage($(side?'lower':'upper'),x,140,620,497);const stats=statistics(state.result.field.subarray(side*20769,(side+1)*20769));ctx.font='15px Arial';paintText(ctx,`Peak ${stats.max.toFixed(2)}°C  |  Sample mean ${stats.mean.toFixed(2)}°C`,x,669);}
+ ctx.font='13px Arial';ctx.fillStyle='#8395a2';const [min,max]=scale();paintText(ctx,`Shared color scale: ${min.toFixed(1)} to ${max.toFixed(1)}°C. Internal cut-plane fields; simulation-validated five-input model v2.0.`,35,720);c.toBlob(b=>download(b,'battery_cooling_prediction.png'),'image/png');
 }
 function inspectPoint(e,side,rotated=false){
  if(!state.result)return;
@@ -183,7 +185,7 @@ function setup(){
  $('applyCase').onclick=()=>{const c=model.meta.testCases.find(c=>c.id===$('validationCase').value);stopSweep();for(const id of inputKeys)state[id]=id==='soc'?c.soc*100:c[id];updateControls();scheduleRender();$('validationDialog').close();toast('Applied '+c.id+' to the live model.');};
  $('preset').onchange=()=>{stopSweep();const p={balanced:[.0115,29.3,35,3,25],cool:[.02,25,35,3,25],warm:[.006,35,35,3,25]};if(p[$('preset').value]){inputKeys.forEach((id,i)=>state[id]=p[$('preset').value][i]);updateControls();scheduleRender();}};
  $('csvButton').onclick=exportCSV;$('pngButton').onclick=exportPNG;
- $('shareButton').onclick=async()=>{const url=new URL(location.href);url.searchParams.set('flow',state.flow.toFixed(6));url.searchParams.set('tin',state.tin.toFixed(2));for(const id of ['soc','crate','ambient'])url.searchParams.set(id,state[id]);url.searchParams.set('modes',state.count);try{await navigator.clipboard.writeText(url.toString());toast('Link with current inputs copied.');}catch{toast('Copy this page URL after updating your inputs.');history.replaceState(null,'',url.toString());}};
+ $('shareButton').onclick=async()=>{const url=new URL(location.href);url.searchParams.set('flow',state.flow.toFixed(6));url.searchParams.set('tin',state.tin.toFixed(2));for(const id of ['soc','crate','ambient'])url.searchParams.set(id,state[id]);url.searchParams.set('modes',state.count);url.searchParams.set('lang',getLanguage());try{await navigator.clipboard.writeText(url.toString());toast('Link with current inputs copied.');}catch{toast('Copy this page URL after updating your inputs.');history.replaceState(null,'',url.toString());}};
  $('upper').onpointermove=e=>inspectPoint(e,0);$('lower').onpointermove=e=>inspectPoint(e,1);
  $('vehicleField').onpointermove=e=>{inspectPoint(e,state.activeSide,true);$('vehicleReadout').textContent=$(state.activeSide?'lowerReadout':'upperReadout').textContent;};
  $('viewUpper').onclick=()=>{state.activeSide=0;scheduleRender();};$('viewLower').onclick=()=>{state.activeSide=1;scheduleRender();};
@@ -195,6 +197,7 @@ function setup(){
  window.addEventListener('resize',()=>{if(state.ready)scheduleRender();});
 }
 setup();
+installI18n(()=>{if(state.ready){render();if($('validationDialog').open)updateValidation();}});
 for(const id of ['sweepButton','validationButton','csvButton','pngButton','lessModes','moreModes'])$(id).disabled=true;
 model.load().then(()=>{
  state.ready=true;for(const id of ['sweepButton','validationButton','csvButton','pngButton','lessModes','moreModes'])$(id).disabled=false;

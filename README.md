@@ -9,3 +9,5 @@ The browser evaluates all 230 Gaussian centers and all 24 modes by default; chan
 Weights and independent validation fields are public with the owner's authorization. Model binary segments preserve Float64 values exactly. See five_input_verification.json for numerical agreement with Python and behavior checks. No COMSOL/Python service is needed at runtime.
 
 GitHub Pages uses the included GitHub Actions workflow. Serve this directory over HTTP for local use. Website: https://andyyongxiwu.github.io/battery-cooling-explainer/
+
+English and Simplified Chinese are selectable using the top-right language button; preferences persist locally and share URLs include lang=en/zh. An independent Flag Counter (058D) reports this site's visitor countries/regions at https://info.flagcounter.com/058D. The statistics image is served directly by Flag Counter; it is not a screenshot or a shared homepage counter.
