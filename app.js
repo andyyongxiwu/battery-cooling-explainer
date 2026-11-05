@@ -38,6 +38,12 @@ function render(){
  const vehicle=$('vehicleField'),vc=vehicle.getContext('2d');
  vc.clearRect(0,0,vehicle.width,vehicle.height);vc.save();vc.translate(vehicle.width,0);vc.rotate(Math.PI/2);
  vc.drawImage($(state.activeSide?'lower':'upper'),0,0,vehicle.height,vehicle.width);vc.restore();
+ const outline=$('vehicleOutline');
+ if(outline.dataset.side!==String(state.activeSide)){
+  outline.src=state.activeSide?'./assets/vehicle-chassis-vertical.png':'./assets/vehicle-sedan-vertical.png';
+  outline.alt=state.activeSide?'Transparent underside chassis with a longitudinal battery enclosure':'Transparent top-down sedan illustration with a longitudinal battery enclosure';
+  outline.dataset.side=String(state.activeSide);
+ }
  $('activeHeight').textContent=state.activeSide?'z = 8.5 mm':'z = 86.5 mm';
  for(const [id,side] of [['viewUpper',0],['viewLower',1]]){$(id).classList.toggle('active',state.activeSide===side);$(id).setAttribute('aria-pressed',String(state.activeSide===side));}
  const a=statistics(upper),b=statistics(lower);
