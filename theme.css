@@ -30,3 +30,7 @@ html[lang="zh-CN"] body,html[lang="zh-CN"] input,html[lang="zh-CN"] button,html[
 @media(min-width:1051px) and (max-width:1250px){.pipeline{grid-template-columns:180px 76px minmax(150px,.65fr) 105px 85px minmax(330px,1.35fr);gap:15px}}
 @media(min-width:1051px){.field-stage{height:700px}.network-wrap{height:620px}.vehicle-legend{right:10%}.vehicle-toolbar{gap:12px}.stats span{font-size:10px}.stats strong{font-size:23px}.export-actions button{font-size:10px}}
 .visitors-widget{max-width:520px;margin:36px auto 0;padding:25px 12px 10px;border-top:1px solid #e1e9ef;text-align:center;color:#6b7e8c}.visitors-widget h2{display:flex;justify-content:center;align-items:center;gap:10px;font:400 16px Lato,'Microsoft YaHei',Arial,sans-serif;color:#5d7181;margin:0 0 20px}.visitors-widget svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8}.visitors-widget a{display:block}.visitors-widget img{max-width:100%;height:auto;min-height:45px}.visitors-widget p{font-size:11px;margin:14px 0;color:#8b9ca8}html[lang="zh-CN"] .stage h2{font-size:14px}html[lang="zh-CN"] .stats span{font-size:10px}
+
+.field-top{height:50px}
+#scaleToggle{min-height:44px;padding:8px 14px;font-size:12px;font-weight:700;color:#225b83;background:#f3f8fc;border-color:#c6dce9;white-space:nowrap}
+#scaleToggle:hover{background:#e5f1f8;border-color:#96bed4}
