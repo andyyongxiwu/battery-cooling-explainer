@@ -26,6 +26,118 @@ function point(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.l
 function inside(e){const r=canvas.getBoundingClientRect();return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;}
 function overlap(p,q){return Math.min(p.x+p.w,q.x+q.w)-Math.max(p.x,q.x)>.01&&Math.min(p.y+p.h,q.y+q.h)-Math.max(p.y,q.y)>.01;}
 function valid(p){return !s.parts.some(q=>q.id!==p.id&&overlap(p,q));}
+const contactTolerance = .01;
+
+function sharedSpan(a, b, axis, size) {
+  return [Math.max(a[axis], b[axis]), Math.min(a[axis] + a[size], b[axis] + b[size])];
+}
+
+function touching(a, b, axis, size, across, length) {
+  const [start, end] = sharedSpan(a, b, across, length);
+  return end - start > contactTolerance &&
+    (Math.abs(a[axis] + a[size] - b[axis]) < contactTolerance ||
+     Math.abs(b[axis] + b[size] - a[axis]) < contactTolerance);
+}
+
+function planInsertion(raw, pointer) {
+  const parts = s.parts.filter(part => part.id !== raw.id);
+  const seams = [];
+  const reach = Math.min(18, 10 / s.view.z);
+  for (const axis of ['x', 'y']) {
+    const [size, across, length] = axis === 'x' ? ['w', 'y', 'h'] : ['h', 'x', 'w'];
+    for (const before of parts) {
+      const edge = before[axis] + before[size];
+      const distance = Math.abs(pointer[axis] - edge);
+      if (distance > reach) continue;
+      for (const after of parts) {
+        if (after.id === before.id || Math.abs(after[axis] - edge) >= contactTolerance) continue;
+        const [start, end] = sharedSpan(before, after, across, length);
+        if (end - start <= contactTolerance || pointer[across] < start || pointer[across] > end) continue;
+        seams.push({axis, size, across, length, before, after, edge, start, end, distance});
+      }
+    }
+  }
+  seams.sort((a, b) => a.distance - b.distance);
+  for (const seam of seams) {
+    const plan = openSeam(raw, parts, seam);
+    if (plan) return plan;
+  }
+  return null;
+}
+
+function openSeam(raw, parts, {axis, size, across, length, before, after, edge, start, end}) {
+  const p = {...raw, [axis]: edge, [across]: start};
+  if (p.type === 'cell') {
+    p[across] = start + (end - start - p[length]) / 2;
+  } else {
+    p.thickness = raw.thickness ?? Math.min(raw.w, raw.h);
+    p[size] = p.thickness * (raw.displayScale ?? 1);
+    p[length] = end - start;
+    if (p[length] < 4) return null;
+    p.axis = axis;
+    p.anchor = before.id;
+    p.side = axis === 'x' ? 'right' : 'bottom';
+  }
+
+  // Move the downstream assembly as a group. Include anything its path would hit.
+  const moved = new Set([after.id]);
+  const queue = [p, after];
+  for (const part of queue) {
+    const inserting = part === p;
+    const swept = inserting ? p : {...part, [size]: part[size] + p[size]};
+    for (const other of parts) {
+      if (moved.has(other.id)) continue;
+      const downstream = other[axis] >= edge - contactTolerance;
+      if (overlap(swept, other)) {
+        if (!downstream) return null;
+      } else if (inserting || !downstream ||
+        (!touching(part, other, axis, size, across, length) &&
+         !touching(part, other, across, length, axis, size))) continue;
+      moved.add(other.id);
+      queue.push(other);
+    }
+  }
+  const shifted = parts.map(part => {
+    const next = {...part};
+    if (moved.has(part.id)) next[axis] += p[size];
+    if (next.anchor === raw.id || (next.anchor && moved.has(next.id) !== moved.has(next.anchor))) {
+      delete next.anchor;
+      delete next.side;
+    }
+    return next;
+  });
+  return {part: p, shifted};
+}
+
+function placement(raw, pointer) {
+  const insertion = planInsertion(raw, pointer);
+  if (insertion) return {...insertion, snapped: true, valid: true};
+  const {snapped, ...part} = snap(raw);
+  return {part, snapped, valid: valid(part)};
+}
+
+function applyPlacement(plan, isNew) {
+  if (!plan?.valid) return;
+  if (isNew && s.parts.length >= 80) {
+    $('status').textContent = tr('当前最多支持 80 个组件。','This version supports up to 80 components.');
+    return;
+  }
+  remember();
+  const p = plan.part;
+  if (plan.shifted) {
+    const shifted = new Map(plan.shifted.map(part => [part.id, part]));
+    s.parts = s.parts.map(part => shifted.get(part.id) ?? p);
+  } else if (!isNew) {
+    s.parts[s.parts.findIndex(part => part.id === p.id)] = p;
+  }
+  if (isNew) {
+    s.parts.push(p);
+    s.next++;
+  }
+  s.selected = p.id;
+  s.tool = null;
+}
+
 function snap(raw){
   const threshold=24/s.view.z, candidates=[];
   for(const q of s.parts){if(q.id===raw.id)continue;
@@ -65,7 +177,7 @@ function zoom(factor,cx=canvas.clientWidth/2,cy=canvas.clientHeight/2){const old
 const thermalColors=[[24,20,49],[57,26,95],[102,35,111],[151,47,105],[199,67,82],[233,105,61],[249,155,55],[249,205,94],[249,242,184]];
 function shade(k){const t=Math.max(0,Math.min(1,(k-298.15)/775))*(thermalColors.length-1),i=Math.min(thermalColors.length-2,Math.floor(t));return `rgb(${thermalColors[i].map((v,j)=>Math.round(v+(thermalColors[i+1][j]-v)*(t-i))).join(',')})`;}
 
-function drawPart(p,ghost=false){const el=document.createElement('div');el.className=`block ${p.type} ${p.type!=='cell'?'material':''} ${(p.type === 'cell' ? p.w > p.h : p.axis === 'y') ? 'horizontal' : ''}`;el.dataset.id=p.id;
+function drawPart(p,preview=null){const el=document.createElement('div');el.className=`block ${p.type} ${p.type!=='cell'?'material':''} ${(p.type === 'cell' ? p.w > p.h : p.axis === 'y') ? 'horizontal' : ''}`;el.dataset.id=p.id;
   Object.assign(el.style,{left:p.x+'px',top:p.y+'px',width:p.w+'px',height:p.h+'px'});
   if(p.type==='cell'){const shell=document.createElement('div');shell.className='cell-detail';shell.setAttribute('aria-hidden','true');shell.innerHTML='<div class="case-seam"></div><div class="terminal positive"><i></i></div><div class="vent"></div><div class="terminal negative"><i></i></div>';el.append(shell);el.classList.toggle('slender',Math.min(p.w,p.h)/Math.max(p.w,p.h)<.45);}
   const text=document.createElement('span');text.className='block-label';text.textContent=p.type==='cell'?label(p):p.type.toUpperCase();
@@ -74,11 +186,11 @@ function drawPart(p,ghost=false){const el=document.createElement('div');el.class
     el.title = 'FR';
   }
   el.append(text);
-  if(ghost){el.classList.add('ghost');if(p.snapped)el.classList.add('snapped');if(!valid(p))el.classList.add('invalid');}
+  if(preview){el.classList.add('ghost');if(preview.snapped)el.classList.add('snapped');if(!preview.valid)el.classList.add('invalid');}
   else{el.classList.toggle('selected',s.selected===p.id);el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-label',label(p));
     const i=s.result?.nodes.findIndex(n=>n.id===p.id);if(i!==undefined&&i>=0){const t=s.result.frames[s.frame][i];el.style.background=shade(t);el.style.color=t<850?'white':'#29202b';if(p.type==='cell'){const out=document.createElement('small');out.textContent=(t-273.15).toFixed(1)+' °C';el.append(out);}el.classList.toggle('hot',s.result.events[i]!==null&&s.result.events[i]<=s.result.times[s.frame]);}}
   world.append(el);return el;}
-function render(){world.replaceChildren();s.parts.forEach(p=>drawPart(p));if(candidate)drawPart(candidate,true);transform();$('empty').hidden=s.parts.length>0||!!candidate;
+function render(){world.replaceChildren();(candidate?.shifted ?? s.parts).forEach(p=>drawPart(p));if(candidate)drawPart(candidate.part,candidate);transform();$('empty').hidden=s.parts.length>0||!!candidate;
   document.querySelectorAll('[data-part]').forEach(b=>b.classList.toggle('active',s.tool===b.dataset.part));
   $('loadExample').disabled = !$('example').value || s.mode === 'running';
   $('duration').disabled = s.mode === 'running';
@@ -153,21 +265,31 @@ function language(){document.documentElement.lang=lang==='zh'?'zh-CN':'en';docum
 function startDrag(e,part){if(e.button!==0||s.mode!=='build')return;e.preventDefault();const p=typeof part==='string'?{...types[part],type:part,id:s.next}:part;gesture={kind:'part',pointer:e.pointerId,source:typeof part==='string'?'library':'world',p:{...p},sx:e.clientX,sy:e.clientY,offset:typeof part==='string'?{x:p.w/2,y:p.h/2}:{x:point(e).x-p.x,y:point(e).y-p.y},moved:false};}
 for(const button of document.querySelectorAll('[data-part]')){button.onpointerdown=e=>{if(s.mode!=='build')cancel();s.tool=button.dataset.part;startDrag(e,s.tool);};button.onclick=e=>{if(e.detail===0){cancel();s.tool=button.dataset.part;render();}};button.ondragstart=e=>e.preventDefault();}
 canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;const id=Number(e.target.closest('[data-id]')?.dataset.id),p=s.parts.find(p=>p.id===id);
-  if(p){s.selected=id;if(s.mode==='arm'&&p.type==='cell'){run(id);return;}if(s.mode==='build'){s.tool=null;startDrag(e,p);}else render();return;}
+  if(p && !s.tool){s.selected=id;if(s.mode==='arm'&&p.type==='cell'){run(id);return;}if(s.mode==='build'){startDrag(e,p);}else render();return;}
   if(s.mode!=='build')return;e.preventDefault();gesture={kind:s.tool?'place':'pan',pointer:e.pointerId,sx:e.clientX,sy:e.clientY,view:{...s.view},moved:false};});
+function dragPlacement(e, g) {
+  const pt = point(e);
+  return placement({...g.p,x:pt.x-g.offset.x,y:pt.y-g.offset.y},pt);
+}
 window.addEventListener('pointermove',e=>{if(!gesture||gesture.pointer!==e.pointerId)return;e.preventDefault();if(Math.hypot(e.clientX-gesture.sx,e.clientY-gesture.sy)>4)gesture.moved=true;
   if(gesture.kind==='pan'||gesture.kind==='place'){if(gesture.moved){s.view.x=gesture.view.x+e.clientX-gesture.sx;s.view.y=gesture.view.y+e.clientY-gesture.sy;transform();}return;}
-  if(!gesture.moved)return;const pt=point(e);candidate=inside(e)?snap({...gesture.p,x:pt.x-gesture.offset.x,y:pt.y-gesture.offset.y}):null;$('dropHint').textContent=candidate?(candidate.snapped?tr('已吸附 · 松开放置','Snapped · Release to place'):valid(candidate)?tr('松开放置','Release to place'):tr('组件重叠，请移至空白处','Overlap · Move to free space')):'';render();},{passive:false});
+  if(!gesture.moved)return;
+  candidate=inside(e)?dragPlacement(e,gesture):null;
+  let hint = '';
+  if (candidate?.shifted) hint = tr('松开以插入 · 相邻组件将让位','Release to insert · Adjacent parts will shift');
+  else if (candidate?.snapped) hint = tr('已吸附 · 松开放置','Snapped · Release to place');
+  else if (candidate?.valid) hint = tr('松开放置','Release to place');
+  else if (candidate) hint = tr('组件重叠，请移至空白处','Overlap · Move to free space');
+  $('dropHint').textContent=hint;
+  render();},{passive:false});
 window.addEventListener('pointerup',e=>{if(!gesture||gesture.pointer!==e.pointerId)return;const g=gesture;gesture=null;$('dropHint').textContent='';
   if(g.kind==='part'){
-    if(g.moved&&candidate&&inside(e)&&valid(candidate)){
-      if(g.source==='library'&&s.parts.length>=80){$('status').textContent=tr('当前最多支持 80 个组件。','This version supports up to 80 components.');candidate=null;render();return;}
-      remember();const p={id:candidate.id,type:candidate.type,x:candidate.x,y:candidate.y,w:candidate.w,h:candidate.h,...(candidate.type!=='cell'?{thickness:candidate.thickness??Math.min(candidate.w,candidate.h),axis:candidate.axis??(candidate.w<candidate.h?'x':'y'),anchor:candidate.anchor,side:candidate.side,displayScale:candidate.displayScale}:{})};
-      if(g.source==='library'){s.parts.push(p);s.next++;}else s.parts[s.parts.findIndex(q=>q.id===p.id)]=p;s.selected=p.id;s.tool=null;
+    if(g.moved&&inside(e)&&s.mode==='build'){
+      applyPlacement(dragPlacement(e,g),g.source==='library');
     }else if(!g.moved){if(g.source==='world'){s.selected=g.p.id;s.tool=null;}else s.tool=g.p.type;}
   }else if(g.kind==='place'&&!g.moved&&s.tool&&inside(e)){
-    const pt=point(e),d=types[s.tool],p=snap({...d,id:s.next,type:s.tool,x:pt.x-d.w/2,y:pt.y-d.h/2});
-    if(valid(p)&&s.parts.length<80){remember();delete p.snapped;s.parts.push(p);s.selected=p.id;s.next++;s.tool=null;}
+    const pt=point(e),d=types[s.tool];
+    applyPlacement(placement({...d,id:s.next,type:s.tool,x:pt.x-d.w/2,y:pt.y-d.h/2},pt),true);
   }else if(!g.moved){s.selected=null;s.tool=null;}
   candidate=null;commit();});
 window.addEventListener('pointercancel',()=>{gesture=null;candidate=null;$('dropHint').textContent='';render();});
@@ -176,7 +298,7 @@ world.addEventListener('keydown',e=>{if(e.key==='Enter'&&s.mode==='arm'){const p
 function rotate(){const p=selected();if(!p||s.mode!=='build')return;const q={...p,w:p.h,h:p.w,x:p.x+(p.w-p.h)/2,y:p.y+(p.h-p.w)/2};if(!valid(q)){$('status').textContent=tr('旋转后会重叠，请先把组件移到空白处。','Rotation would overlap. Move the component to free space first.');return;}if(q.type!=='cell'){q.axis=(p.axis??(p.w<p.h?'x':'y'))==='x'?'y':'x';delete q.anchor;delete q.side;}remember();Object.assign(p,q);commit();}
 function remove(){if(!selected()||s.mode!=='build')return;remember();s.parts=s.parts.filter(p=>p.id!==s.selected);s.selected=null;commit();}
 function undo(){if(s.mode!=='build'||!s.undo.length)return;s.parts=JSON.parse(s.undo.pop());s.selected=null;commit();}
-window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return;if(e.key==='Escape'){gesture=null;candidate=null;s.tool=null;cancel();render();}if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();remove();}if(e.key.toLowerCase()==='r')rotate();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}});
+window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return;if(e.key==='Escape'){gesture=null;candidate=null;s.tool=null;$('dropHint').textContent='';cancel();render();}if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();remove();}if(e.key.toLowerCase()==='r')rotate();if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}});
 for(const id of ['width','height'])$(id).onchange=()=>{const p=selected();if(!p||s.mode!=='build')return;const w=+$('width').value,h=+$('height').value,q={...p,w,h};if(!Number.isFinite(w+h)||Math.min(w,h)<4||Math.max(w,h)>600||!valid(q)){$('status').textContent=tr('尺寸无效或与相邻组件重叠。','Invalid dimensions or overlapping geometry.');render();return;}remember();Object.assign(p,q);commit();};
 function createWorker() {
   return new Worker(new URL('./worker.mjs', import.meta.url), {type: 'module'});

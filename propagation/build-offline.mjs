@@ -29,6 +29,6 @@ const offline = html
   .replaceAll('href="./model-audit.md"', 'href="https://andyyongxiwu.github.io/battery-cooling-explainer/propagation/model-audit.md"')
   .replaceAll('href="./"', 'href="#"')
   .replaceAll('href="../"', 'href="https://andyyongxiwu.github.io/battery-cooling-explainer/"')
-  .replace('<script type="module" src="./lab.mjs"></script>',
+  .replace(/<script type="module" src="\.\/lab\.mjs(?:\?[^"]*)?"><\/script>/,
     () => `<script>(() => {\n'use strict';\n${core}\n${browserCode}\n})();</script>`);
 await writeFile(new URL('../../Propagation Lab.html', directory), offline);
