@@ -1,7 +1,19 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Propagation Studio | Battery Intelligence</title><link rel="stylesheet" href="./lab.css"></head>
-<body><header><a href="../">Battery Intelligence</a><nav class="suite-nav"><a href="../" data-en="Overview" data-zh="项目目录"></a><a href="../cooling/">Cooling Explorer</a><a href="./" aria-current="page">Propagation Studio</a><button id="language">EN</button></nav></header>
-<section class="heading"><div><p data-en="BUILD · TRIGGER · EXPLORE" data-zh="自由搭建 · 点击触发 · 观察传播"></p><h1>Propagation Studio</h1></div><div class="studio-slogan"><span data-en="Your pack." data-zh="你的电池包"></span> <strong data-en="Your design." data-zh="由你设计"></strong></div></section>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Propagation Studio | Battery Intelligence</title><link rel="stylesheet" href="../suite.css"><link rel="stylesheet" href="./lab.css"></head>
+<body><div class="suite-header"><a class="suite-brand" href="../">Battery Intelligence</a>
+<nav class="suite-links" aria-label="Battery Intelligence modules" data-no-i18n>
+<a href="../">Overview</a>
+<a href="../cooling/">Cooling Explorer</a>
+<a href="./" aria-current="page">Propagation Studio</a>
+</nav>
+<button id="language" class="suite-language" type="button" aria-label="Switch language" data-no-i18n>中文</button></div>
+<header class="suite-titlebar">
+  <div class="suite-identity">
+    <div class="suite-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><rect x="5" y="11" width="11" height="23" rx="2"/><rect x="24" y="11" width="11" height="23" rx="2"/><path d="M8 11V7h5v4m14 0V7h5v4M18 19q4-4 8 0m-8 7q4-4 8 0"/></svg></div>
+    <h1>Propagation Studio</h1>
+  </div>
+  <div class="suite-title-extra studio-slogan"><span data-en="Your pack." data-zh="你的电池包"></span> <strong data-en="Your design." data-zh="由你设计"></strong></div>
+</header>
 <main><aside class="library"><h2 data-en="Components" data-zh="组件仓库"></h2><p data-en="Drag onto the canvas, or select a part and click to place." data-zh="拖入画布，或选中组件后点击画布放置。"></p>
 <button class="part" data-part="cell"><i class="icon cell"></i><span data-en="Battery cell" data-zh="电芯"></span><small id="cellSize">40 × 140</small></button>
 <button class="part" data-part="pcm"><i class="icon pcm"></i><span>PCM</span><small data-en="Phase-change layer" data-zh="相变材料层"></small></button>

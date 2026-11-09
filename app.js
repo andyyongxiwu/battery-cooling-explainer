@@ -1,4 +1,4 @@
-import {installI18n,tr,getLanguage} from './i18n.js?v=7';
+import {installI18n,tr,getLanguage} from './i18n.js?v=8';
 import {ThermalModel,statistics,errors} from './model.js?v=6';
 const $=id=>document.getElementById(id), model=new ThermalModel();
 const state={flow:.0115,tin:29.3,soc:35,crate:3,ambient:25,page:0,count:24,autoScale:true,activeSide:0,focused:-1,result:null,ready:false,playing:false,validationToken:0};

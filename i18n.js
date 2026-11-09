@@ -80,9 +80,15 @@ export function installI18n(onChange){
   document.documentElement.lang=language==='zh'?'zh-CN':'en';document.title=language==='zh'?'电池热管理预测平台 — 电池智能预测':'Battery Thermal Explorer — Battery Intelligence';
   const toggle=document.getElementById('languageToggle'),label=language==='zh'?'中文':'EN';if(toggle.textContent!==label)toggle.textContent=label;
  }
- function setLanguage(next){language=next==='zh'?'zh':'en';try{localStorage.setItem('batteryLanguage',language);}catch{}translate();onChange?.();}
+ function localizeNavigation(){
+  for(const link of document.querySelectorAll('.suite-links a,.suite-brand')){
+   const url=new URL(link.href);url.searchParams.set('lang',language);link.href=url.href;
+  }
+ }
+ function setLanguage(next){language=next==='zh'?'zh':'en';try{localStorage.setItem('batteryLanguage',language);}catch{}localizeNavigation();translate();onChange?.();}
  const params=new URLSearchParams(location.search);let saved;try{saved=localStorage.getItem('batteryLanguage');}catch{}
  language=params.get('lang')==='zh'?'zh':params.get('lang')==='en'?'en':saved==='zh'?'zh':'en';
+ localizeNavigation();
  document.getElementById('languageToggle').onclick=()=>setLanguage(language==='en'?'zh':'en');
  new MutationObserver(translate).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['aria-label','title','alt']});
  translate();
