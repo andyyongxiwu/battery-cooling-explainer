@@ -1,25 +1,29 @@
-// Physical parameters from TRN_busbar_NAIL reliufenxi_12module.py.
+// Updated from GNN_LSTM_PINN_modular/TRN.py and TRN_3D.py (2026-11-09).
 export const columns = 9;
 export const rows = 5;
 export const ambient = 298.15;
-export const triggerTemperature = ambient + 0.223 * 3600 * 3.6 * 3 / (0.4286 * 1301);
+export const triggerTemperature = ambient + 2.8 * 3600 * 3.87 * 3 / (720 * 1.1);
 export const eventTemperatureC = 200;
 const eventTemperature = eventTemperatureC + 273.15;
-const area = 0.027997964;
-const convection = 20 * 0.002;
-const busbarResistance = 0.736434109 + 2 * 4.400380258;
-const mass = {cell: 428, pcm: 31.58170339, fr: 3.023780112};
-const resistance = {cell: 0.00371134, pcm: 0.041811847, fr: 0.010452962};
-const contact = 0.00952381;
-const initialReaction = [0.15, 0.75, 0.04, 0.999, 0.999];
-const reactions = [
-  [2.57e5, 610.4, 1.667e15, 135080, 363.15],
-  [1.714e6, 610.4, 2.5e13, 135080, 393.15],
-  [3.14e5, 1438, 6.667e13, 139600, 473.15],
-  [1.55e5, 406.9, 5.14e25, 274000, 503.15],
-  [9.03e8, 1, 3.37e12, 95150, 330],
-];
-
+const area = 0.013468;
+const busbarResistance = 9.8;
+const mass = {cell:720, pcm:31.58, fr:3.02};
+const resistance = {cell:0.0064686804, pcm:0.041811847, fr:0.010452962};
+const contact = 0.004;
+const initialReaction = [0.04,0.75,0.15,0.033,1];
+const faceArea = {x:0.013468,y:0.002366,z:0.003848};
+const axisResistance = {x:0.0064686804,y:0.00501592,z:0.0034855184};
+export const sourceProfiles = {"trn6": {"count": 6, "h": 25, "threshold": 300, "vent": 0.08, "environment": [0.5504009256321324, 0.21443266607736228, 0.21443266607736228, 0.21443266607736228, 0.21443266607736228, 0.5504009256321324], "links": [{"a": 0, "b": 1, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 1, "b": 0, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 1, "b": 2, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 2, "b": 1, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 2, "b": 3, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 3, "b": 2, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 3, "b": 4, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 4, "b": 3, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 4, "b": 5, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 5, "b": 4, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}]}, "trn25": {"count": 25, "h": 5, "threshold": 299, "vent": 0.07, "environment": [0.09837868729975437, 0.03106800789484971, 0.03106800789484971, 0.03106800789484971, 0.09837868729975437, 0.09837868729975437, 0.03106800789484971, 0.03106800789484971, 0.03106800789484971, 0.09837868729975437, 0.09837868729975437, 0.03106800789484971, 0.03106800789484971, 0.03106800789484971, 0.09837868729975437, 0.09837868729975437, 0.03106800789484971, 0.03106800789484971, 0.03106800789484971, 0.09837868729975437, 0.09837868729975437, 0.03106800789484971, 0.03106800789484971, 0.03106800789484971, 0.09837868729975437], "links": [{"a": 0, "b": 1, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 0, "b": 2, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 0, "b": 3, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 0, "b": 4, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 0, "b": 5, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 1, "b": 0, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 1, "b": 2, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 1, "b": 3, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 1, "b": 4, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 1, "b": 6, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 2, "b": 0, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 2, "b": 1, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 2, "b": 3, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 2, "b": 4, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 2, "b": 7, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 3, "b": 0, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 3, "b": 1, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 3, "b": 2, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 3, "b": 4, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 3, "b": 8, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 4, "b": 0, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 4, "b": 1, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 4, "b": 2, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 4, "b": 3, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 4, "b": 9, "conductance": 0.2706573341887639, "directed": true, "kind": "source"}, {"a": 5, "b": 0, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 5, "b": 6, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 5, "b": 7, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 5, "b": 8, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 5, "b": 9, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 5, "b": 10, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 6, "b": 1, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 6, "b": 5, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 6, "b": 7, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 6, "b": 8, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 6, "b": 9, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 6, "b": 11, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 7, "b": 2, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 7, "b": 5, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 7, "b": 6, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 7, "b": 8, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 7, "b": 9, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 7, "b": 12, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 8, "b": 3, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 8, "b": 5, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 8, "b": 6, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 8, "b": 7, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 8, "b": 9, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 8, "b": 13, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 9, "b": 4, "conductance": 0.2706573341887639, "directed": true, "kind": "source"}, {"a": 9, "b": 5, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 9, "b": 6, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 9, "b": 7, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 9, "b": 8, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 9, "b": 14, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 10, "b": 5, "conductance": 0.2706573341887639, "directed": true, "kind": "source"}, {"a": 10, "b": 11, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 10, "b": 12, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 10, "b": 13, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 10, "b": 14, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 10, "b": 15, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 11, "b": 6, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 11, "b": 10, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 11, "b": 12, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 11, "b": 13, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 11, "b": 14, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 11, "b": 16, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 12, "b": 7, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 12, "b": 10, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 12, "b": 11, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 12, "b": 13, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 12, "b": 14, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 12, "b": 17, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 13, "b": 8, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 13, "b": 10, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 13, "b": 11, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 13, "b": 12, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 13, "b": 14, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 13, "b": 18, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 14, "b": 9, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 14, "b": 10, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 14, "b": 11, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 14, "b": 12, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 14, "b": 13, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 14, "b": 19, "conductance": 0.2706573341887639, "directed": true, "kind": "source"}, {"a": 15, "b": 10, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 15, "b": 16, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 15, "b": 17, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 15, "b": 18, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 15, "b": 19, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 15, "b": 20, "conductance": 0.2706573341887639, "directed": true, "kind": "source"}, {"a": 16, "b": 11, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 16, "b": 15, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 16, "b": 17, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 16, "b": 18, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 16, "b": 19, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 16, "b": 21, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 17, "b": 12, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 17, "b": 15, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 17, "b": 16, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 17, "b": 18, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 17, "b": 19, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 17, "b": 22, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 18, "b": 13, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 18, "b": 15, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 18, "b": 16, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 18, "b": 17, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 18, "b": 19, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 18, "b": 23, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 19, "b": 14, "conductance": 0.2706573341887639, "directed": true, "kind": "source"}, {"a": 19, "b": 15, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 19, "b": 16, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 19, "b": 17, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 19, "b": 18, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 19, "b": 24, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 20, "b": 15, "conductance": 0.2706573341887639, "directed": true, "kind": "source"}, {"a": 20, "b": 21, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 20, "b": 22, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 20, "b": 23, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 20, "b": 24, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 21, "b": 16, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 21, "b": 20, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 21, "b": 22, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 21, "b": 23, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 21, "b": 24, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 22, "b": 17, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 22, "b": 20, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 22, "b": 21, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 22, "b": 23, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 22, "b": 24, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 23, "b": 18, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 23, "b": 20, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 23, "b": 21, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 23, "b": 22, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 23, "b": 24, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}, {"a": 24, "b": 19, "conductance": 0.16861651786223333, "directed": true, "kind": "source"}, {"a": 24, "b": 20, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 24, "b": 21, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 24, "b": 22, "conductance": 0.1020408163265306, "directed": true, "kind": "source"}, {"a": 24, "b": 23, "conductance": 0.8972060229388854, "directed": true, "kind": "source"}]}};
+export function sourceLayout(profile) {
+  const count=sourceProfiles[profile]?.count;
+  if(!count) throw new Error('Unknown source profile');
+  return Array.from({length:count},(_,i)=>({id:i+1,type:'cell',x:(profile==='trn6'?i:i%5)*40,y:(profile==='trn6'?0:Math.floor(i/5))*140,w:40,h:140}));
+}
+export function sourceMatches(parts,profile) {
+  if(!sourceProfiles[profile])return false;
+  const reference=sourceLayout(profile);
+  return parts.length===reference.length && parts.every((p,i)=>p.type==='cell'&&p.w===40&&p.h===140&&Math.abs(p.x-parts[0].x-reference[i].x)<.01&&Math.abs(p.y-parts[0].y-reference[i].y)<.01);
+}
 export function buildNetwork(tiles, busbars) {
   const nodes = [], indices = new Map(), links = [];
   tiles.forEach((type, slot) => {
@@ -37,7 +41,7 @@ export function buildNetwork(tiles, busbars) {
       if (b === undefined) continue;
       const other = nodes[b].type;
       let r = resistance[type] + resistance[other];
-      if (type === 'cell' && other === 'cell') r = resistance.cell;
+      if (type === 'cell' && other === 'cell') r = 2*resistance.cell+contact;
       else if (type === 'cell' || other === 'cell') r += contact;
       links.push({a, b, conductance: area / r, kind: 'contact'});
     }
@@ -55,11 +59,12 @@ export function buildNetwork(tiles, busbars) {
 }
 
 // Freeform plan geometry uses reference units, not physical millimetres.
-// The source model face area and masses are reference values for an 80 x 140 cell.
+// 40 x 140 is the UI reference footprint for the supplied 720 g cell.
 export function buildGeometryNetwork(parts) {
-  const reference = {cell: 80 * 140, pcm: 16 * 140, fr: 8 * 140};
+  const reference = {cell: 40 * 140, pcm: 16 * 140, fr: 8 * 140};
   const nodes = parts.map(p => ({...p, slot: p.id, scale: p.w * p.h / reference[p.type]}));
   const links = [];
+  const exposed = nodes.map(p=>({x:2,y:2,z:1}));
   for (let a = 0; a < nodes.length; a++) for (let b = a + 1; b < nodes.length; b++) {
     const p = nodes[a], q = nodes[b];
     const dx = Math.min(p.x+p.w,q.x+q.w)-Math.max(p.x,q.x);
@@ -69,17 +74,20 @@ export function buildGeometryNetwork(parts) {
     const horizontal = Math.abs(p.y+p.h-q.y)<0.01 || Math.abs(q.y+q.h-p.y)<0.01;
     const length = vertical && dy>0.01 ? dy : horizontal && dx>0.01 ? dx : 0;
     if (!length) continue;
+    const axis=vertical?'x':'y';
+    exposed[a][axis]-=length/(vertical?p.h:p.w);exposed[b][axis]-=length/(vertical?q.h:q.w);
     const depth = n => n.type === 'cell' ? 1 : (vertical ? n.w : n.h)/(n.type === 'pcm' ? 16 : 8);
-    let r = resistance[p.type]*depth(p)+resistance[q.type]*depth(q);
-    if (p.type==='cell' && q.type==='cell') r=resistance.cell;
-    else if(p.type==='cell'||q.type==='cell') r+=contact;
-    links.push({a,b,conductance: area * length / 140 / r, kind:'contact'});
+    const half=n=>n.type==='cell'?axisResistance[axis]*(vertical?n.w/40:n.h/140):resistance[n.type]*depth(n);
+    let r = half(p)+half(q);
+    if(p.type==='cell'||q.type==='cell') r+=contact;
+    links.push({a,b,conductance: faceArea[axis] * length / (vertical?140:40) / r, kind:'contact'});
   }
+  nodes.forEach((p,i)=>{p.environment=p.type==='cell'?Object.keys(faceArea).reduce((sum,d)=>sum+Math.max(0,exposed[i][d])/(axisResistance[d]+1/(25*faceArea[d])),0)*p.scale:25*0.012428*p.scale;});
   return {nodes,links};
 }
 
 function heatCapacity(type, temperature) {
-  if (type === 'cell') return mass.cell * 1.301;
+  if (type === 'cell') return mass.cell * 1.1;
   if (type === 'fr') return mass.fr * 0.00004197;
   if (temperature <= 316.65) return mass.pcm * 2.180;
   if (temperature >= 321.35) return mass.pcm * 2.390;
@@ -87,48 +95,36 @@ function heatCapacity(type, temperature) {
   return mass.pcm * (2.180 + latent);
 }
 
-// Integrate each reaction exactly at the temperature and SEI state at step entry.
-function react(t, state, offset, dt, next) {
-  let energy = 0;
-  const seiFactor = Math.exp(-(0.033 + 0.15 - state[offset + 1]) / 0.033);
-  for (let j = 0; j < reactions.length; j++) {
-    const [heat, weight, frequency, activation, threshold] = reactions[j];
-    const initial = state[offset + j];
-    let updated = initial;
-    if (1.249 * t >= threshold && initial > 1e-6 && initial < 0.9999) {
-      const rate = frequency * Math.exp(-activation / (8.314 * t));
-      if (j === 2) {
-        updated = Math.min(0.9999, 1 / (1 + (1 / initial - 1) * Math.exp(-rate * dt)));
-      } else {
-        updated = Math.max(1e-6, initial * Math.exp(-rate * dt * (j === 1 ? seiFactor : 1)));
-      }
-    }
-    next[offset + j] = updated;
-    energy += heat * weight * Math.abs(updated - initial) * 0.000201585;
+// Frozen-temperature reaction increments, adaptively refined by step doubling.
+function react(t, state, offset, dt, next, config, triggered) {
+  const [c,a,se,z,soc]=state.slice(offset,offset+5);
+  const active=t>=config.threshold;
+  const rc=active?4e13/60*Math.exp(-2.03e-19/(1.38e-23*t)):0;
+  const ra=active?1e14/60*Math.exp(-2.24e-19/(1.38e-23*t)):0;
+  const rs=active?1e15/60*Math.exp(-z/.033-2.24e-19/(1.38e-23*t)):0;
+  const nc=c>0&&c<1?1/(1+(1/c-1)*Math.exp(-rc*dt)):c;
+  const na=a*Math.exp(-ra*dt), ns=se*Math.exp(-rs*dt);
+  const nz=z+(se-ns)*.1;
+  const nsoc=Math.max(0,soc-(t>=433.15?1e12/60*(1-c)*a*Math.exp(-1.4e-19/(1.38e-23*t))*dt:0));
+  next.set([nc,na,ns,nz,nsoc],offset);
+  return .29*3.14e5*(nc-c)+.13*1.714e6*(a-na)+.13*2.57e5*(se-ns)+351000*(1-config.vent-(triggered?.1:0))*(soc-nsoc);
+}
+function solveLinear(matrix,rhs,n) {
+  // Diagonally dominant implicit heat operator; supports the source's directed links.
+  for(let k=0;k<n;k++)for(let i=k+1;i<n;i++){
+    const f=matrix[i*n+k]/matrix[k*n+k];
+    if(!f)continue;
+    for(let j=k+1;j<n;j++)matrix[i*n+j]-=f*matrix[k*n+j];
+    rhs[i]-=f*rhs[k];
   }
-  return energy;
+  for(let i=n-1;i>=0;i--){for(let j=i+1;j<n;j++)rhs[i]-=matrix[i*n+j]*rhs[j];rhs[i]/=matrix[i*n+i];}
 }
 
-function solveSymmetric(matrix, rhs, n) {
-  // In-place Cholesky factorization and forward/back substitution.
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j <= i; j++) {
-      let value = matrix[i * n + j];
-      for (let k = 0; k < j; k++) value -= matrix[i * n + k] * matrix[j * n + k];
-      matrix[i * n + j] = i === j ? Math.sqrt(value) : value / matrix[j * n + j];
-    }
-    for (let j = 0; j < i; j++) rhs[i] -= matrix[i * n + j] * rhs[j];
-    rhs[i] /= matrix[i * n + i];
-  }
-  for (let i = n - 1; i >= 0; i--) {
-    for (let j = i + 1; j < n; j++) rhs[i] -= matrix[j * n + i] * rhs[j];
-    rhs[i] /= matrix[i * n + i];
-  }
-}
-
-export function simulate({tiles, parts, ignition, busbars, duration = 200, tolerance = 0.05}, onProgress = () => {}) {
+export function simulate({tiles, parts, ignition, busbars, duration = 200, tolerance = 0.001, profile = null}, onProgress = () => {}) {
   if (!Number.isFinite(duration) || duration <= 0) throw new Error('Enter a positive observation duration.');
-  const {nodes, links} = parts ? buildGeometryNetwork(parts) : buildNetwork(tiles, busbars);
+  const config=sourceProfiles[profile]??{h:25,threshold:300,vent:.08};
+  if(profile && !sourceMatches(parts,profile))throw new Error('Source layout changed. Select custom layout physics.');
+  const {nodes, links} = profile ? {nodes:parts.map((p,i)=>({...p,slot:p.id,scale:1,environment:config.environment[i]})),links:config.links} : parts ? buildGeometryNetwork(parts) : buildNetwork(tiles,busbars);
   const n = nodes.length;
   const ignitionNode = nodes.findIndex(node => node.slot === ignition && node.type === 'cell');
   if (ignitionNode < 0) throw new Error('Choose an installed battery cell to trigger.');
@@ -138,22 +134,23 @@ export function simulate({tiles, parts, ignition, busbars, duration = 200, toler
   const matrix = new Float64Array(n * n);
   const rhs = new Float64Array(n);
   const conductance = new Float64Array(n * n);
-  for (const {a, b, conductance: g} of links) {
+  for (const {a, b, conductance: g, directed} of links) {
     conductance[a * n + a] += g;
-    conductance[b * n + b] += g;
+    if(!directed)conductance[b * n + b] += g;
     conductance[a * n + b] -= g;
-    conductance[b * n + a] -= g;
+    if(!directed)conductance[b * n + a] -= g;
   }
   function advance(state, dt, out) {
     for (let i = 0; i < matrix.length; i++) matrix[i] = dt * conductance[i];
     for (const [i, node] of nodes.entries()) {
       const scale = node.scale ?? 1;
       const cp = heatCapacity(node.type, state[i]) * scale;
-      const energy = node.type === 'cell' ? react(state[i], state, offsets.get(i), dt, out) * scale : 0;
-      matrix[i * n + i] += cp + dt * convection * scale;
-      rhs[i] = cp * state[i] + energy + dt * convection * scale * ambient;
+      const energy = node.type === 'cell' ? react(state[i], state, offsets.get(i), dt, out,config,i===ignitionNode) * scale : 0;
+      const convection=node.environment??25*.012428*scale;
+      matrix[i * n + i] += cp + dt * convection;
+      rhs[i] = cp * state[i] + energy + dt * convection * ambient;
     }
-    solveSymmetric(matrix, rhs, n);
+    solveLinear(matrix, rhs, n);
     out.set(rhs);
   }
   let current = new Float64Array(size);
@@ -165,11 +162,11 @@ export function simulate({tiles, parts, ignition, busbars, duration = 200, toler
   const events = Array(n).fill(null);
   const times = [0], frames = [Array.from(current.subarray(0, n))];
   let t = 0, dt = 0.05, steps = 0;
-  const interval = 0.25;
+  const interval = Math.max(0.25,duration/8000);
   while (t < duration - 1e-8) {
     const target = Math.min(duration, times.length * interval);
     while (t < target - 1e-8) {
-      if (++steps > 180000) throw new Error('Solver step limit reached. Try a smaller layout or a shorter run.');
+      if (++steps > 1000000) throw new Error('Solver step limit reached. Try a smaller layout or a shorter run.');
       const h = Math.min(dt, target - t);
       advance(current, h, full);
       advance(current, h / 2, half);

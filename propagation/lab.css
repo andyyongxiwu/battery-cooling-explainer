@@ -13,3 +13,14 @@
 .duration small{color:#4a6476}
 .inspector #history{height:auto}
 .block.slender.cell>small{font-size:9px}
+
+/* Flat, close-fitting cell selection and restrained hardware. */
+.block.cell,.icon.cell{background:#c8d6df;box-shadow:none}
+.case-seam{box-shadow:none;border-color:#8196a3;inset:4px}
+.terminal,.terminal.negative{background:#dce4e8;box-shadow:none;border-color:#7d939f}
+.terminal.positive{background:#dfc6a7}
+.terminal i{background:#b48a5e;box-shadow:none;border-color:#8e6b48}
+.terminal.negative i{background:#91a8b5;border-color:#637e8e}
+.block.cell>.block-label{text-shadow:none}
+.block.selected,.block.hot,.block.snapped{outline-offset:-2px;outline-width:2px}
+.block.selected{outline-color:#007f91;z-index:2}

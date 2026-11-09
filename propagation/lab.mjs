@@ -1,4 +1,4 @@
-import {buildGeometryNetwork} from './solver.mjs';
+import {buildGeometryNetwork,sourceLayout,sourceMatches} from './solver.mjs';
 const $ = id => document.getElementById(id);
 const types = {cell:{w:40,h:140},pcm:{w:16,h:140,thickness:16,axis:'x'},fr:{w:8,h:140,thickness:8,axis:'x'}};
 const exampleLayers = {
@@ -12,12 +12,12 @@ const s = {parts:[],selected:null,tool:null,mode:'build',next:1,undo:[],view:{x:
 let gesture=null, candidate=null, playback=0;
 let chartResult, chartNode, chartLanguage;
 const canvas=$('canvas'), world=$('world');
-const label=p=>`${p.type==='cell'?tr('电芯','Cell'):p.type.toUpperCase()} ${p.id}`;
+const label=p=>{const group=s.parts.filter(q=>q.type===p.type),index=group.findIndex(q=>q.id===p.id);return `${p.type==='cell'?tr('电芯','Cell'):p.type.toUpperCase()} ${index<0?group.length+1:index+1}`;};
 const selected=()=>s.parts.find(p=>p.id===s.selected);
 function persist(){try{localStorage.setItem('propagation-freeform-v1',JSON.stringify(s.parts));}catch{}}
 function remember(){s.undo.push(JSON.stringify(s.parts));if(s.undo.length>40)s.undo.shift();}
 function cancel(){s.worker?.terminate();s.worker=null;s.result=null;s.playing=false;cancelAnimationFrame(playback);s.mode='build';s.frame=0;$('status').textContent='';}
-function commit(){persist();render();}
+function commit(){if(s.profile&&!sourceMatches(s.parts,s.profile))s.profile=null;persist();render();}
 function point(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left-s.view.x)/s.view.z,y:(e.clientY-r.top-s.view.y)/s.view.z};}
 function inside(e){const r=canvas.getBoundingClientRect();return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;}
 function overlap(p,q){return Math.min(p.x+p.w,q.x+q.w)-Math.max(p.x,q.x)>.01&&Math.min(p.y+p.h,q.y+q.h)-Math.max(p.y,q.y)>.01;}
@@ -74,6 +74,7 @@ function render(){world.replaceChildren();s.parts.forEach(p=>drawPart(p));if(can
   $('edit').classList.toggle('active',s.mode==='build');$('arm').classList.toggle('active',s.mode==='arm');$('arm').disabled=!s.parts.some(p=>p.type==='cell')||s.mode==='running';$('undo').disabled=!s.undo.length||s.mode!=='build';
   $('instruction').textContent={build:tr('拖入组件，靠近边缘自动吸附。','Drag components. Nearby edges snap together.'),arm:tr('点击一颗电芯，开始模拟。','Click a cell to start simulation.'),running:tr('正在计算，可点击搭建取消。','Computing. Click Build to cancel.'),view:tr('拖动时间轴，查看温度与传播过程。','Scrub the timeline to explore propagation.')}[s.mode];
   let links=[];try{links=buildGeometryNetwork(s.parts).links;}catch{}
+  $('physicsProfile').textContent=s.profile?(s.profile==='trn6'?'TRN.py · h = 25':'TRN_3D.py · h = 5'):tr('自由搭建 · h = 25','Custom layout · h = 25');
   $('count').textContent=tr(`${s.parts.length} 个组件 · ${links.length} 处接触`,`${s.parts.length} parts · ${links.length} contacts`);
   const p=selected();$('selection').textContent=p?label(p):tr('点选一个组件，查看或编辑。','Select a component to inspect or edit.');$('properties').hidden=!p;
   if(p){$('width').value=p.w;$('height').value=p.h;$('width').disabled=$('height').disabled=s.mode!=='build'||p.type!=='cell';$('thicknessField').hidden=p.type==='cell';$('thickness').value=p.thickness??Math.min(p.w,p.h);$('thickness').disabled=s.mode!=='build';$('rotate').disabled=$('remove').disabled=s.mode!=='build';const i=s.parts.indexOf(p);$('contacts').textContent=tr(`接触邻居：${links.filter(l=>l.a===i||l.b===i).length}`,`Touching neighbours: ${links.filter(l=>l.a===i||l.b===i).length}`);}
@@ -160,35 +161,38 @@ function createWorker() {
 function run(ignition){const duration=$('duration').valueAsNumber;if(!$('duration').reportValidity())return;cancel();s.tool=null;s.mode='running';render();let w;try{w=createWorker();}catch(e){cancel();$('status').textContent=e.message;render();return;}s.worker=w;
   w.onerror=e=>{cancel();render();$('status').textContent=tr('计算启动失败：','Calculation failed: ')+e.message;};
   w.onmessage=({data})=>{if(s.worker!==w)return;if(data.error){cancel();render();$('status').textContent=data.error;return;}if(!data.result){$('status').textContent=tr(`已计算 ${Math.round(data.time)} s`,`Computed ${Math.round(data.time)} s`);return;}w.terminate();s.worker=null;s.result=data.result;s.frame=0;s.mode='view';render();play();};
-  w.postMessage({parts:s.parts,ignition,duration});}
+  w.postMessage({parts:s.parts,ignition,duration,profile:s.profile});}
 function play(){if(!s.result)return;s.playing=!s.playing;cancelAnimationFrame(playback);if(s.playing){if(s.frame===s.result.times.length-1)s.frame=0;let last=performance.now(),time=s.result.times[s.frame];const tick=now=>{if(!s.playing)return;time+=(now-last)/1000*+$('speed').value;last=now;while(s.frame<s.result.times.length-1&&s.result.times[s.frame+1]<=time)s.frame++;if(s.frame===s.result.times.length-1)s.playing=false;render();if(s.playing)playback=requestAnimationFrame(tick);};playback=requestAnimationFrame(tick);}renderTime();}
 $('play').onclick=play;$('scrub').oninput=()=>{s.playing=false;cancelAnimationFrame(playback);s.frame=+$('scrub').value;render();};$('edit').onclick=()=>{cancel();s.tool=null;render();};$('arm').onclick=()=>{cancel();s.tool=null;s.mode='arm';render();};$('clear').onclick=()=>{cancel();remember();s.parts=[];s.selected=null;s.tool=null;commit();};$('undo').onclick=undo;$('rotate').onclick=rotate;$('remove').onclick=remove;$('fit').onclick=fit;$('zoomin').onclick=()=>zoom(1.2);$('zoomout').onclick=()=>zoom(1/1.2);$('language').onclick=()=>{lang=lang==='zh'?'en':'zh';language();};$('duration').onchange=()=>{cancel();render();};
-$('save').onclick=()=>{const blob=new Blob([JSON.stringify({version:1,parts:s.parts},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='battery-pack-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};$('load').onclick=()=>$('file').click();
+$('save').onclick=()=>{const blob=new Blob([JSON.stringify({version:2,parts:s.parts,profile:s.profile??null},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='battery-pack-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};$('load').onclick=()=>$('file').click();
 $('example').onchange = () => { $('loadExample').disabled = !$('example').value || s.mode === 'running'; };
 $('loadExample').onclick = () => {
-  const layers = exampleLayers[$('example').value];
-  if (!layers || s.mode === 'running') return;
+  const key=$('example').value, isSource=key==='trn6'||key==='trn25';
+  const layers = exampleLayers[key];
+  if ((!layers&&!isSource) || s.mode === 'running') return;
   if (s.parts.length && !confirm(tr('载入示例会替换当前布局，可以用撤销恢复。继续？', 'Load this example and replace your current layout? You can undo this change.'))) return;
 
   cancel();
   remember();
   const sequence = ['cell'];
-  for (let index = 1; index < 6; index++) sequence.push(...layers, 'cell');
+  for (let index = 1; index < 6; index++) sequence.push(...(layers??[]), 'cell');
   let x = 0;
+  s.next=1;
   s.parts = sequence.map(type => {
     const dimensions = type === 'cell' ? {w:40, h:140} : {w:type === 'pcm' ? 16 : 8, h:140, axis:'x'};
     const part = {type, id:s.next++, x, y:0, ...dimensions};
     x += part.w;
     return part;
   });
+  s.profile=isSource?key:null;
+  if(isSource){s.parts=sourceLayout(key);s.next=s.parts.length+1;$('duration').value=key==='trn6'?1500:4000;}
   s.tool = null;
   s.selected = s.parts[0].id;
   $('example').value = '';
   commit();
   fit();
 };
-$('file').onchange=async()=>{try{const data=JSON.parse(await $('file').files[0].text()),parts=data.parts;if(!Array.isArray(parts)||parts.length>80)throw Error('Invalid layout');const ids=new Set();for(const p of parts){if(!types[p.type]||!Number.isInteger(p.id)||p.id<1||ids.has(p.id)||![p.x,p.y,p.w,p.h].every(Number.isFinite)||Math.min(p.w,p.h)<4||Math.max(p.w,p.h)>600||Math.max(Math.abs(p.x),Math.abs(p.y))>100000)throw Error('Invalid component');ids.add(p.id);}buildGeometryNetwork(parts);cancel();remember();s.parts=parts.map(({id,type,x,y,w,h,axis})=>({id,type,x,y,w,h,...(type!=='cell'?{axis:axis==='y'?'y':axis==='x'?'x':w<h?'x':'y',thickness:axis==='y'?h:axis==='x'?w:Math.min(w,h)}:{})}));s.next=Math.max(0,...parts.map(p=>p.id))+1;s.selected=null;commit();fit();}catch(e){$('status').textContent=tr('无法导入：','Import failed: ')+e.message;}$('file').value='';};
-try{const stored=JSON.parse(localStorage.getItem('propagation-freeform-v1'));if(Array.isArray(stored)&&stored.length<=80&&stored.every(p=>types[p.type]&&[p.x,p.y,p.w,p.h].every(Number.isFinite))){buildGeometryNetwork(stored);s.parts=stored;s.next=Math.max(0,...stored.map(p=>p.id))+1;}}catch{}
+$('file').onchange=async()=>{try{const data=JSON.parse(await $('file').files[0].text()),parts=data.parts;if(!Array.isArray(parts)||parts.length>80)throw Error('Invalid layout');const ids=new Set();for(const p of parts){if(!types[p.type]||!Number.isInteger(p.id)||p.id<1||ids.has(p.id)||![p.x,p.y,p.w,p.h].every(Number.isFinite)||Math.min(p.w,p.h)<4||Math.max(p.w,p.h)>600||Math.max(Math.abs(p.x),Math.abs(p.y))>100000)throw Error('Invalid component');ids.add(p.id);}buildGeometryNetwork(parts);cancel();remember();s.parts=parts.map(({id,type,x,y,w,h,axis})=>({id,type,x,y,w,h,...(type!=='cell'?{axis:axis==='y'?'y':axis==='x'?'x':w<h?'x':'y',thickness:axis==='y'?h:axis==='x'?w:Math.min(w,h)}:{})}));s.next=Math.max(0,...parts.map(p=>p.id))+1;s.profile=sourceMatches(s.parts,data.profile)?data.profile:null;s.selected=null;commit();fit();}catch(e){$('status').textContent=tr('无法导入：','Import failed: ')+e.message;}$('file').value='';};
 for(const id of ['defaultWidth','defaultHeight'])$(id).onchange=()=>{const w=+$('defaultWidth').value,h=+$('defaultHeight').value;if(Number.isFinite(w+h)&&Math.min(w,h)>=4&&Math.max(w,h)<=600){types.cell.w=w;types.cell.h=h;$('cellSize').textContent=`${w} × ${h}`;}else{$('defaultWidth').value=types.cell.w;$('defaultHeight').value=types.cell.h;}};
 for(const type of ['pcm','fr'])$(type+'Thickness').onchange=()=>{const v=+$(type+'Thickness').value;if(Number.isFinite(v)&&v>=4&&v<=600){types[type].w=v;types[type].thickness=v;}else $(type+'Thickness').value=types[type].thickness;};
 $('thickness').onchange=()=>{const p=selected(),v=+$('thickness').value;if(!p||p.type==='cell'||s.mode!=='build')return;const axis=p.axis??(p.w<p.h?'x':'y'),q={...p,axis,thickness:v,[axis==='x'?'w':'h']:v};const anchor=s.parts.find(n=>n.id===p.anchor);if(anchor&&p.side==='left')q.x=anchor.x-v;if(anchor&&p.side==='top')q.y=anchor.y-v;if(!Number.isFinite(v)||v<4||v>600||!valid(q)){$('status').textContent=tr('厚度无效或会与其他组件重叠。','Invalid thickness or overlap with another component.');render();return;}remember();Object.assign(p,q);commit();};
