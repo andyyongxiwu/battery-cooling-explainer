@@ -127,6 +127,7 @@ function solveSymmetric(matrix, rhs, n) {
 }
 
 export function simulate({tiles, parts, ignition, busbars, duration = 200, tolerance = 0.05}, onProgress = () => {}) {
+  if (!Number.isFinite(duration) || duration <= 0) throw new Error('Enter a positive observation duration.');
   const {nodes, links} = parts ? buildGeometryNetwork(parts) : buildNetwork(tiles, busbars);
   const n = nodes.length;
   const ignitionNode = nodes.findIndex(node => node.slot === ignition && node.type === 'cell');
@@ -163,7 +164,7 @@ export function simulate({tiles, parts, ignition, busbars, duration = 200, toler
   let next = new Float64Array(size);
   const events = Array(n).fill(null);
   const times = [0], frames = [Array.from(current.subarray(0, n))];
-  let t = 0, dt = 0.05, steps = 0, reached = 0;
+  let t = 0, dt = 0.05, steps = 0;
   const interval = 0.25;
   while (t < duration - 1e-8) {
     const target = Math.min(duration, times.length * interval);
@@ -184,18 +185,15 @@ export function simulate({tiles, parts, ignition, busbars, duration = 200, toler
       for (const i of cellNodes) {
         if (events[i] === null && next[i] >= eventTemperature) {
           events[i] = t + h * (eventTemperature - current[i]) / (next[i] - current[i]);
-          reached++;
         }
       }
       [current, next] = [next, current];
       t += h;
       dt = Math.min(0.25, h * Math.min(2, 0.9 * Math.sqrt(tolerance / Math.max(error, 1e-12))));
-      if (reached === cellNodes.length) break;
     }
     times.push(t);
     frames.push(Array.from(current.subarray(0, n)));
     if (times.length % 40 === 0) onProgress(t);
-    if (reached === cellNodes.length) break;
   }
   return {nodes, links, events, times, frames, ignitionNode, cellCount: cellNodes.length};
 }

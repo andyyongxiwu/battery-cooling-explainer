@@ -1,10 +1,16 @@
-import {buildGeometryNetwork, eventTemperatureC} from './solver.mjs';
+import {buildGeometryNetwork} from './solver.mjs';
 const $ = id => document.getElementById(id);
-const types = {cell:{w:80,h:140},pcm:{w:16,h:140,thickness:16,axis:'x'},fr:{w:8,h:140,thickness:8,axis:'x'}};
+const types = {cell:{w:40,h:140},pcm:{w:16,h:140,thickness:16,axis:'x'},fr:{w:8,h:140,thickness:8,axis:'x'}};
+const exampleLayers = {
+  bare: [],
+  pcm: ['pcm'],
+  hybrid: ['pcm', 'fr'],
+};
 let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'zh';
 const tr = (zh,en) => lang === 'zh' ? zh : en;
 const s = {parts:[],selected:null,tool:null,mode:'build',next:1,undo:[],view:{x:80,y:90,z:1},result:null,frame:0,playing:false,worker:null};
 let gesture=null, candidate=null, playback=0;
+let chartResult, chartNode, chartLanguage;
 const canvas=$('canvas'), world=$('world');
 const label=p=>`${p.type==='cell'?tr('电芯','Cell'):p.type.toUpperCase()} ${p.id}`;
 const selected=()=>s.parts.find(p=>p.id===s.selected);
@@ -63,6 +69,8 @@ function drawPart(p,ghost=false){const el=document.createElement('div');el.class
   world.append(el);return el;}
 function render(){world.replaceChildren();s.parts.forEach(p=>drawPart(p));if(candidate)drawPart(candidate,true);transform();$('empty').hidden=s.parts.length>0||!!candidate;
   document.querySelectorAll('[data-part]').forEach(b=>b.classList.toggle('active',s.tool===b.dataset.part));
+  $('loadExample').disabled = !$('example').value || s.mode === 'running';
+  $('duration').disabled = s.mode === 'running';
   $('edit').classList.toggle('active',s.mode==='build');$('arm').classList.toggle('active',s.mode==='arm');$('arm').disabled=!s.parts.some(p=>p.type==='cell')||s.mode==='running';$('undo').disabled=!s.undo.length||s.mode!=='build';
   $('instruction').textContent={build:tr('拖入组件，靠近边缘自动吸附。','Drag components. Nearby edges snap together.'),arm:tr('点击一颗电芯，开始模拟。','Click a cell to start simulation.'),running:tr('正在计算，可点击搭建取消。','Computing. Click Build to cancel.'),view:tr('拖动时间轴，查看温度与传播过程。','Scrub the timeline to explore propagation.')}[s.mode];
   let links=[];try{links=buildGeometryNetwork(s.parts).links;}catch{}
@@ -70,9 +78,53 @@ function render(){world.replaceChildren();s.parts.forEach(p=>drawPart(p));if(can
   const p=selected();$('selection').textContent=p?label(p):tr('点选一个组件，查看或编辑。','Select a component to inspect or edit.');$('properties').hidden=!p;
   if(p){$('width').value=p.w;$('height').value=p.h;$('width').disabled=$('height').disabled=s.mode!=='build'||p.type!=='cell';$('thicknessField').hidden=p.type==='cell';$('thickness').value=p.thickness??Math.min(p.w,p.h);$('thickness').disabled=s.mode!=='build';$('rotate').disabled=$('remove').disabled=s.mode!=='build';const i=s.parts.indexOf(p);$('contacts').textContent=tr(`接触邻居：${links.filter(l=>l.a===i||l.b===i).length}`,`Touching neighbours: ${links.filter(l=>l.a===i||l.b===i).length}`);}
   renderTime();}
-function renderTime(){const r=s.result;const t=r?.times[s.frame]??0;$('clock').textContent=t.toFixed(1)+' s';$('scrub').disabled=$('play').disabled=!r;$('scrub').max=r?r.times.length-1:0;$('scrub').value=s.frame;$('play').textContent=s.playing?'❚❚':'▶';$('temperature').textContent='';$('history').replaceChildren();
-  const p=selected(),i=r?.nodes.findIndex(n=>n.id===p?.id);if(r&&i>=0){$('temperature').textContent=(r.frames[s.frame][i]-273.15).toFixed(1)+' °C';const max=Math.max(50,...r.frames.map(f=>f[i]-273.15));$('history').innerHTML=`<path d="M8 5V105H232" fill="none" stroke="#a9c9dc"/><polyline fill="none" stroke="#1c83af" stroke-width="2" points="${r.frames.map((f,k)=>`${8+224*r.times[k]/r.times.at(-1)},${105-95*(f[i]-273.15)/max}`).join(' ')}"/>`;}
-  if(r)$('status').textContent='';}
+function drawHistory(result, node) {
+  if (chartResult === result && chartNode === node && chartLanguage === lang) return;
+  chartResult = result;
+  chartNode = node;
+  chartLanguage = lang;
+  const chart = $('history');
+  chart.replaceChildren();
+  if (!result || node < 0) return;
+
+  const {frames, times} = result;
+  const temperatures = frames.map(frame => frame[node] - 273.15);
+  const duration = times.at(-1);
+  const maxTemperature = Math.max(50, ...temperatures);
+  const tickStep = Math.ceil(maxTemperature / 200) * 50;
+  const x = time => 46 + 181 * time / duration;
+  const y = temperature => 117 - 104 * temperature / (4 * tickStep);
+  const grid = Array.from({length: 5}, (_, index) => {
+    const temperature = index * tickStep;
+    const time = duration * index / 4;
+    const timeLabel = Number(time.toFixed(duration < 4 ? 3 : 1));
+    return `<path d="M46 ${y(temperature)}H227" stroke="#d7e2e9"/>
+      <path d="M42 ${y(temperature)}H46 M${x(time)} 117v4" stroke="#7993a6"/>
+      <text x="39" y="${y(temperature) + 3}" text-anchor="end">${temperature}</text>
+      <text x="${x(time)}" y="133" text-anchor="middle">${timeLabel}</text>`;
+  }).join('');
+  const points = temperatures.map((temperature, index) =>
+    `${x(times[index]).toFixed(2)},${y(temperature).toFixed(2)}`).join(' ');
+  chart.setAttribute('aria-label', tr('温度随时间变化曲线', 'Temperature over time'));
+  chart.innerHTML = `<g fill="#405f73" font-size="9">${grid}
+    <text x="137" y="150" text-anchor="middle">${tr('时间 (s)', 'Time (s)')}</text>
+    <text transform="translate(12 65) rotate(-90)" text-anchor="middle">${tr('温度 (°C)', 'Temperature (°C)')}</text></g>
+    <path d="M46 13V117H227" fill="none" stroke="#7993a6"/>
+    <polyline fill="none" stroke="#1c83af" stroke-width="1.8" points="${points}"/>`;
+}
+function renderTime() {
+  const result = s.result;
+  const time = result?.times[s.frame] ?? 0;
+  $('clock').textContent = time.toFixed(1) + ' s';
+  $('scrub').disabled = $('play').disabled = !result;
+  $('scrub').max = result ? result.times.length - 1 : 0;
+  $('scrub').value = s.frame;
+  $('play').textContent = s.playing ? '❚❚' : '▶';
+  const node = result?.nodes.findIndex(n => n.id === s.selected) ?? -1;
+  $('temperature').textContent = node >= 0 ? (result.frames[s.frame][node] - 273.15).toFixed(1) + ' °C' : '';
+  drawHistory(result, node);
+  if (result) $('status').textContent = '';
+}
 function language(){document.documentElement.lang=lang==='zh'?'zh-CN':'en';document.querySelectorAll('[data-en]').forEach(el=>el.textContent=el.dataset[lang]);$('language').textContent=lang==='zh'?'EN':'中文';render();}
 function startDrag(e,part){if(e.button!==0||s.mode!=='build')return;e.preventDefault();const p=typeof part==='string'?{...types[part],type:part,id:s.next}:part;gesture={kind:'part',pointer:e.pointerId,source:typeof part==='string'?'library':'world',p:{...p},sx:e.clientX,sy:e.clientY,offset:typeof part==='string'?{x:p.w/2,y:p.h/2}:{x:point(e).x-p.x,y:point(e).y-p.y},moved:false};}
 for(const button of document.querySelectorAll('[data-part]')){button.onpointerdown=e=>{if(s.mode!=='build')cancel();s.tool=button.dataset.part;startDrag(e,s.tool);};button.onclick=e=>{if(e.detail===0){cancel();s.tool=button.dataset.part;render();}};button.ondragstart=e=>e.preventDefault();}
@@ -105,13 +157,36 @@ for(const id of ['width','height'])$(id).onchange=()=>{const p=selected();if(!p|
 function createWorker() {
   return new Worker(new URL('./worker.mjs', import.meta.url), {type: 'module'});
 }
-function run(ignition){cancel();s.tool=null;s.mode='running';render();let w;try{w=createWorker();}catch(e){cancel();$('status').textContent=e.message;render();return;}s.worker=w;
+function run(ignition){const duration=$('duration').valueAsNumber;if(!$('duration').reportValidity())return;cancel();s.tool=null;s.mode='running';render();let w;try{w=createWorker();}catch(e){cancel();$('status').textContent=e.message;render();return;}s.worker=w;
   w.onerror=e=>{cancel();render();$('status').textContent=tr('计算启动失败：','Calculation failed: ')+e.message;};
   w.onmessage=({data})=>{if(s.worker!==w)return;if(data.error){cancel();render();$('status').textContent=data.error;return;}if(!data.result){$('status').textContent=tr(`已计算 ${Math.round(data.time)} s`,`Computed ${Math.round(data.time)} s`);return;}w.terminate();s.worker=null;s.result=data.result;s.frame=0;s.mode='view';render();play();};
-  w.postMessage({parts:s.parts,ignition,duration:+$('duration').value});}
+  w.postMessage({parts:s.parts,ignition,duration});}
 function play(){if(!s.result)return;s.playing=!s.playing;cancelAnimationFrame(playback);if(s.playing){if(s.frame===s.result.times.length-1)s.frame=0;let last=performance.now(),time=s.result.times[s.frame];const tick=now=>{if(!s.playing)return;time+=(now-last)/1000*+$('speed').value;last=now;while(s.frame<s.result.times.length-1&&s.result.times[s.frame+1]<=time)s.frame++;if(s.frame===s.result.times.length-1)s.playing=false;render();if(s.playing)playback=requestAnimationFrame(tick);};playback=requestAnimationFrame(tick);}renderTime();}
 $('play').onclick=play;$('scrub').oninput=()=>{s.playing=false;cancelAnimationFrame(playback);s.frame=+$('scrub').value;render();};$('edit').onclick=()=>{cancel();s.tool=null;render();};$('arm').onclick=()=>{cancel();s.tool=null;s.mode='arm';render();};$('clear').onclick=()=>{cancel();remember();s.parts=[];s.selected=null;s.tool=null;commit();};$('undo').onclick=undo;$('rotate').onclick=rotate;$('remove').onclick=remove;$('fit').onclick=fit;$('zoomin').onclick=()=>zoom(1.2);$('zoomout').onclick=()=>zoom(1/1.2);$('language').onclick=()=>{lang=lang==='zh'?'en':'zh';language();};$('duration').onchange=()=>{cancel();render();};
 $('save').onclick=()=>{const blob=new Blob([JSON.stringify({version:1,parts:s.parts},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='battery-pack-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};$('load').onclick=()=>$('file').click();
+$('example').onchange = () => { $('loadExample').disabled = !$('example').value || s.mode === 'running'; };
+$('loadExample').onclick = () => {
+  const layers = exampleLayers[$('example').value];
+  if (!layers || s.mode === 'running') return;
+  if (s.parts.length && !confirm(tr('载入示例会替换当前布局，可以用撤销恢复。继续？', 'Load this example and replace your current layout? You can undo this change.'))) return;
+
+  cancel();
+  remember();
+  const sequence = ['cell'];
+  for (let index = 1; index < 6; index++) sequence.push(...layers, 'cell');
+  let x = 0;
+  s.parts = sequence.map(type => {
+    const dimensions = type === 'cell' ? {w:40, h:140} : {w:type === 'pcm' ? 16 : 8, h:140, axis:'x'};
+    const part = {type, id:s.next++, x, y:0, ...dimensions};
+    x += part.w;
+    return part;
+  });
+  s.tool = null;
+  s.selected = s.parts[0].id;
+  $('example').value = '';
+  commit();
+  fit();
+};
 $('file').onchange=async()=>{try{const data=JSON.parse(await $('file').files[0].text()),parts=data.parts;if(!Array.isArray(parts)||parts.length>80)throw Error('Invalid layout');const ids=new Set();for(const p of parts){if(!types[p.type]||!Number.isInteger(p.id)||p.id<1||ids.has(p.id)||![p.x,p.y,p.w,p.h].every(Number.isFinite)||Math.min(p.w,p.h)<4||Math.max(p.w,p.h)>600||Math.max(Math.abs(p.x),Math.abs(p.y))>100000)throw Error('Invalid component');ids.add(p.id);}buildGeometryNetwork(parts);cancel();remember();s.parts=parts.map(({id,type,x,y,w,h,axis})=>({id,type,x,y,w,h,...(type!=='cell'?{axis:axis==='y'?'y':axis==='x'?'x':w<h?'x':'y',thickness:axis==='y'?h:axis==='x'?w:Math.min(w,h)}:{})}));s.next=Math.max(0,...parts.map(p=>p.id))+1;s.selected=null;commit();fit();}catch(e){$('status').textContent=tr('无法导入：','Import failed: ')+e.message;}$('file').value='';};
 try{const stored=JSON.parse(localStorage.getItem('propagation-freeform-v1'));if(Array.isArray(stored)&&stored.length<=80&&stored.every(p=>types[p.type]&&[p.x,p.y,p.w,p.h].every(Number.isFinite))){buildGeometryNetwork(stored);s.parts=stored;s.next=Math.max(0,...stored.map(p=>p.id))+1;}}catch{}
 for(const id of ['defaultWidth','defaultHeight'])$(id).onchange=()=>{const w=+$('defaultWidth').value,h=+$('defaultHeight').value;if(Number.isFinite(w+h)&&Math.min(w,h)>=4&&Math.max(w,h)<=600){types.cell.w=w;types.cell.h=h;$('cellSize').textContent=`${w} × ${h}`;}else{$('defaultWidth').value=types.cell.w;$('defaultHeight').value=types.cell.h;}};
