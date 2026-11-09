@@ -58,9 +58,23 @@ export function buildNetwork(tiles, busbars) {
   return {nodes, links};
 }
 
+function cellConvection(exposed, h) {
+  return Object.keys(faceArea).reduce((sum, direction) => {
+    const exposedFaces = Math.max(0, exposed[direction]);
+    return sum + exposedFaces / (axisResistance[direction] + 1 / (h * faceArea[direction]));
+  }, 0);
+}
+
+function sourceConvection(profile, i, h) {
+  // Exposed-face masks from the original Python preset geometries.
+  const lastColumn = profile === 'trn6' ? 5 : 4;
+  const column = profile === 'trn6' ? i : i % 5;
+  return cellConvection({x: Number(column === 0 || column === lastColumn), y: profile === 'trn6' ? 2 : 1, z: 1}, h);
+}
+
 // Freeform plan geometry uses reference units, not physical millimetres.
 // 40 x 140 is the UI reference footprint for the supplied 720 g cell.
-export function buildGeometryNetwork(parts) {
+export function buildGeometryNetwork(parts, h = sourceProfiles.trn25.h) {
   const reference = {cell: 40 * 140, pcm: 16 * 140, fr: 8 * 140};
   const nodes = parts.map(p => ({...p, slot: p.id, scale: p.w * p.h / reference[p.type]}));
   const links = [];
@@ -82,7 +96,13 @@ export function buildGeometryNetwork(parts) {
     if(p.type==='cell'||q.type==='cell') r+=contact;
     links.push({a,b,conductance: faceArea[axis] * length / (vertical?140:40) / r, kind:'contact'});
   }
-  nodes.forEach((p,i)=>{p.environment=p.type==='cell'?Object.keys(faceArea).reduce((sum,d)=>sum+Math.max(0,exposed[i][d])/(axisResistance[d]+1/(25*faceArea[d])),0)*p.scale:25*0.012428*p.scale;});
+  nodes.forEach((node, i) => {
+    if (node.type === 'cell') {
+      node.environment = cellConvection(exposed[i], h) * node.scale;
+    } else {
+      node.environment = h * 0.012428 * node.scale;
+    }
+  });
   return {nodes,links};
 }
 
@@ -120,11 +140,23 @@ function solveLinear(matrix,rhs,n) {
   for(let i=n-1;i>=0;i--){for(let j=i+1;j<n;j++)rhs[i]-=matrix[i*n+j]*rhs[j];rhs[i]/=matrix[i*n+i];}
 }
 
-export function simulate({tiles, parts, ignition, busbars, duration = 200, tolerance = 0.001, profile = null}, onProgress = () => {}) {
+export function simulate({tiles, parts, ignition, busbars, duration = parts ? 4000 : 200, tolerance = 0.001, profile = null, convectionCoefficient}, onProgress = () => {}) {
   if (!Number.isFinite(duration) || duration <= 0) throw new Error('Enter a positive observation duration.');
-  const config=sourceProfiles[profile]??{h:25,threshold:300,vent:.08};
+  const config = sourceProfiles[profile] ?? (parts ? sourceProfiles.trn25 : sourceProfiles.trn6);
   if(profile && !sourceMatches(parts,profile))throw new Error('Source layout changed. Select custom layout physics.');
-  const {nodes, links} = profile ? {nodes:parts.map((p,i)=>({...p,slot:p.id,scale:1,environment:config.environment[i]})),links:config.links} : parts ? buildGeometryNetwork(parts) : buildNetwork(tiles,busbars);
+  const h = convectionCoefficient ?? config.h;
+  if (!Number.isFinite(h) || h < 0 || h > 10000) {
+    throw new Error('Enter a convection coefficient from 0 to 10000 W/(m²·K).');
+  }
+  const {nodes, links} = profile ? {
+    nodes: parts.map((part, i) => ({
+      ...part,
+      slot: part.id,
+      scale: 1,
+      environment: h === config.h ? config.environment[i] : sourceConvection(profile, i, h),
+    })),
+    links: config.links,
+  } : parts ? buildGeometryNetwork(parts, h) : buildNetwork(tiles, busbars);
   const n = nodes.length;
   const ignitionNode = nodes.findIndex(node => node.slot === ignition && node.type === 'cell');
   if (ignitionNode < 0) throw new Error('Choose an installed battery cell to trigger.');
@@ -146,7 +178,7 @@ export function simulate({tiles, parts, ignition, busbars, duration = 200, toler
       const scale = node.scale ?? 1;
       const cp = heatCapacity(node.type, state[i]) * scale;
       const energy = node.type === 'cell' ? react(state[i], state, offsets.get(i), dt, out,config,i===ignitionNode) * scale : 0;
-      const convection=node.environment??25*.012428*scale;
+      const convection = node.environment ?? h * 0.012428 * scale;
       matrix[i * n + i] += cp + dt * convection;
       rhs[i] = cp * state[i] + energy + dt * convection * ambient;
     }

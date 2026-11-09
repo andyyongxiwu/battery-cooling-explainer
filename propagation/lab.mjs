@@ -1,9 +1,10 @@
-import {buildGeometryNetwork,sourceLayout,sourceMatches} from './solver.mjs';
+import {buildGeometryNetwork,sourceLayout,sourceMatches,sourceProfiles} from './solver.mjs';
 const $ = id => document.getElementById(id);
 const types = {cell:{w:40,h:140},pcm:{w:16,h:140,thickness:16,axis:'x'},fr:{w:8,h:140,thickness:8,axis:'x'}};
 const exampleLayers = {
   bare: [],
   pcm: ['pcm'],
+  pcmPair: ['pcm'],
   hybrid: ['pcm', 'fr'],
 };
 let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'zh';
@@ -74,7 +75,14 @@ function render(){world.replaceChildren();s.parts.forEach(p=>drawPart(p));if(can
   $('edit').classList.toggle('active',s.mode==='build');$('arm').classList.toggle('active',s.mode==='arm');$('arm').disabled=!s.parts.some(p=>p.type==='cell')||s.mode==='running';$('undo').disabled=!s.undo.length||s.mode!=='build';
   $('instruction').textContent={build:tr('拖入组件，靠近边缘自动吸附。','Drag components. Nearby edges snap together.'),arm:tr('点击一颗电芯，开始模拟。','Click a cell to start simulation.'),running:tr('正在计算，可点击搭建取消。','Computing. Click Build to cancel.'),view:tr('拖动时间轴，查看温度与传播过程。','Scrub the timeline to explore propagation.')}[s.mode];
   let links=[];try{links=buildGeometryNetwork(s.parts).links;}catch{}
-  $('physicsProfile').textContent=s.profile?(s.profile==='trn6'?'TRN.py · h = 25':'TRN_3D.py · h = 5'):tr('自由搭建 · h = 25','Custom layout · h = 25');
+  const convectionInput = $('convection');
+  const defaultConvection = String((sourceProfiles[s.profile] ?? sourceProfiles.trn25).h);
+  if (convectionInput.defaultValue !== defaultConvection) {
+    if (convectionInput.value === convectionInput.defaultValue) convectionInput.value = defaultConvection;
+    convectionInput.defaultValue = defaultConvection;
+  }
+  convectionInput.disabled = s.mode === 'running';
+  $('physicsProfile').textContent = s.profile === 'trn6' ? 'TRN.py' : s.profile === 'trn25' ? 'TRN_3D.py' : tr('自由搭建 · TRN_3D.py 参数','Custom layout · TRN_3D.py parameters');
   $('count').textContent=tr(`${s.parts.length} 个组件 · ${links.length} 处接触`,`${s.parts.length} parts · ${links.length} contacts`);
   const p=selected();$('selection').textContent=p?label(p):tr('点选一个组件，查看或编辑。','Select a component to inspect or edit.');$('properties').hidden=!p;
   if(p){$('width').value=p.w;$('height').value=p.h;$('width').disabled=$('height').disabled=s.mode!=='build'||p.type!=='cell';$('thicknessField').hidden=p.type==='cell';$('thickness').value=p.thickness??Math.min(p.w,p.h);$('thickness').disabled=s.mode!=='build';$('rotate').disabled=$('remove').disabled=s.mode!=='build';const i=s.parts.indexOf(p);$('contacts').textContent=tr(`接触邻居：${links.filter(l=>l.a===i||l.b===i).length}`,`Touching neighbours: ${links.filter(l=>l.a===i||l.b===i).length}`);}
@@ -158,12 +166,12 @@ for(const id of ['width','height'])$(id).onchange=()=>{const p=selected();if(!p|
 function createWorker() {
   return new Worker(new URL('./worker.mjs', import.meta.url), {type: 'module'});
 }
-function run(ignition){const duration=$('duration').valueAsNumber;if(!$('duration').reportValidity())return;cancel();s.tool=null;s.mode='running';render();let w;try{w=createWorker();}catch(e){cancel();$('status').textContent=e.message;render();return;}s.worker=w;
+function run(ignition){const duration=$('duration').valueAsNumber;if(!$('duration').reportValidity() || !$('convection').reportValidity())return;cancel();s.tool=null;s.mode='running';render();let w;try{w=createWorker();}catch(e){cancel();$('status').textContent=e.message;render();return;}s.worker=w;
   w.onerror=e=>{cancel();render();$('status').textContent=tr('计算启动失败：','Calculation failed: ')+e.message;};
   w.onmessage=({data})=>{if(s.worker!==w)return;if(data.error){cancel();render();$('status').textContent=data.error;return;}if(!data.result){$('status').textContent=tr(`已计算 ${Math.round(data.time)} s`,`Computed ${Math.round(data.time)} s`);return;}w.terminate();s.worker=null;s.result=data.result;s.frame=0;s.mode='view';render();play();};
-  w.postMessage({parts:s.parts,ignition,duration,profile:s.profile});}
+  w.postMessage({parts:s.parts,ignition,duration,profile:s.profile,convectionCoefficient:$('convection').valueAsNumber});}
 function play(){if(!s.result)return;s.playing=!s.playing;cancelAnimationFrame(playback);if(s.playing){if(s.frame===s.result.times.length-1)s.frame=0;let last=performance.now(),time=s.result.times[s.frame];const tick=now=>{if(!s.playing)return;time+=(now-last)/1000*+$('speed').value;last=now;while(s.frame<s.result.times.length-1&&s.result.times[s.frame+1]<=time)s.frame++;if(s.frame===s.result.times.length-1)s.playing=false;render();if(s.playing)playback=requestAnimationFrame(tick);};playback=requestAnimationFrame(tick);}renderTime();}
-$('play').onclick=play;$('scrub').oninput=()=>{s.playing=false;cancelAnimationFrame(playback);s.frame=+$('scrub').value;render();};$('edit').onclick=()=>{cancel();s.tool=null;render();};$('arm').onclick=()=>{cancel();s.tool=null;s.mode='arm';render();};$('clear').onclick=()=>{cancel();remember();s.parts=[];s.selected=null;s.tool=null;commit();};$('undo').onclick=undo;$('rotate').onclick=rotate;$('remove').onclick=remove;$('fit').onclick=fit;$('zoomin').onclick=()=>zoom(1.2);$('zoomout').onclick=()=>zoom(1/1.2);$('language').onclick=()=>{lang=lang==='zh'?'en':'zh';language();};$('duration').onchange=()=>{cancel();render();};
+$('play').onclick=play;$('scrub').oninput=()=>{s.playing=false;cancelAnimationFrame(playback);s.frame=+$('scrub').value;render();};$('edit').onclick=()=>{cancel();s.tool=null;render();};$('arm').onclick=()=>{cancel();s.tool=null;s.mode='arm';render();};$('clear').onclick=()=>{cancel();remember();s.parts=[];s.selected=null;s.tool=null;commit();};$('undo').onclick=undo;$('rotate').onclick=rotate;$('remove').onclick=remove;$('fit').onclick=fit;$('zoomin').onclick=()=>zoom(1.2);$('zoomout').onclick=()=>zoom(1/1.2);$('language').onclick=()=>{lang=lang==='zh'?'en':'zh';language();};$('duration').onchange=$('convection').onchange=()=>{cancel();render();};
 $('save').onclick=()=>{const blob=new Blob([JSON.stringify({version:2,parts:s.parts,profile:s.profile??null},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='battery-pack-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};$('load').onclick=()=>$('file').click();
 $('example').onchange = () => { $('loadExample').disabled = !$('example').value || s.mode === 'running'; };
 $('loadExample').onclick = () => {
@@ -175,7 +183,8 @@ $('loadExample').onclick = () => {
   cancel();
   remember();
   const sequence = ['cell'];
-  for (let index = 1; index < 6; index++) sequence.push(...(layers??[]), 'cell');
+  const cellCount = key === 'pcmPair' ? 2 : 6;
+  for (let index = 1; index < cellCount; index++) sequence.push(...(layers??[]), 'cell');
   let x = 0;
   s.next=1;
   s.parts = sequence.map(type => {
@@ -185,7 +194,9 @@ $('loadExample').onclick = () => {
     return part;
   });
   s.profile=isSource?key:null;
+  $('convection').value = (sourceProfiles[s.profile] ?? sourceProfiles.trn25).h;
   if(isSource){s.parts=sourceLayout(key);s.next=s.parts.length+1;$('duration').value=key==='trn6'?1500:4000;}
+  if (key === 'pcmPair') $('duration').value = 4000;
   s.tool = null;
   s.selected = s.parts[0].id;
   $('example').value = '';

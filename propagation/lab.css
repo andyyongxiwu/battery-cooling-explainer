@@ -24,3 +24,6 @@
 .block.cell>.block-label{text-shadow:none}
 .block.selected,.block.hot,.block.snapped{outline-offset:-2px;outline-width:2px}
 .block.selected{outline-color:#007f91;z-index:2}
+
+.convection{display:block;font-size:13px}
+.convection .duration-value>span{white-space:nowrap}
