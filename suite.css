@@ -2,7 +2,7 @@
 @font-face{font-family:Lato;src:url('./assets/Lato-Bold.ttf') format('truetype');font-style:normal;font-weight:700;font-display:swap}
 
 :root {
-  --suite-gutter: max(30px, calc((100vw - 1576px) / 2));
+  --suite-gutter: max(30px, calc((100vw - 1720px) / 2));
   --suite-font: Lato, "Segoe UI", "Microsoft YaHei", Helvetica, Arial, sans-serif;
   --suite-blue: #005b94;
   --suite-accent: #3388bd;
@@ -47,7 +47,7 @@ html { scrollbar-gutter: stable; }
   display: flex;
   align-items: center;
   gap: 14px;
-  font: 600 13px/1.25 Arial, sans-serif;
+  font: 700 14px/1.25 var(--suite-font);
   letter-spacing: .03em;
 }
 
@@ -133,6 +133,43 @@ html { scrollbar-gutter: stable; }
 }
 
 .suite-title-extra { min-width: 0; }
+
+.suite-header a:focus-visible,
+.suite-header button:focus-visible {
+  outline: 2px solid #167bac;
+  outline-offset: 3px;
+}
+
+@media (min-width: 1450px) {
+  .suite-brand { font-size: 25px; }
+  .suite-titlebar h1 { font-size: 36px; }
+  .suite-mark { flex-basis: 54px; width: 54px; height: 54px; }
+}
+
+.visitor-panel {
+  width: min(540px, calc(100% - 32px));
+  margin: 32px auto;
+  padding: 24px;
+  border: 1px solid var(--suite-line);
+  border-radius: 12px;
+  background: white;
+  text-align: center;
+  box-shadow: 0 5px 20px rgb(28 62 85 / 5%);
+}
+.visitor-panel h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  color: #345971;
+  font: 700 17px/1.4 var(--suite-font);
+}
+.visitor-panel svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.visitor-panel a { display: block; border-radius: 5px; }
+.visitor-panel a:focus-visible { outline: 2px solid #167bac; outline-offset: 4px; }
+.visitor-panel img { display: block; max-width: 100%; min-height: 50px; height: auto; margin: auto; }
+.visitor-panel p { color: #6c8191; font-size: 12px; margin: 16px 0 0; }
 
 @media (max-width: 1250px) {
   :root { --suite-gutter: 24px; }

@@ -12,7 +12,7 @@ const types = {
 };
 let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'zh';
 const tr = (zh,en) => lang === 'zh' ? zh : en;
-const s = {parts:[],selected:null,tool:null,mode:'build',next:1,undo:[],view:{x:80,y:90,z:1},result:null,frame:0,playing:false,worker:null};
+const s = {parts:[],selected:null,tool:null,mode:'build',next:1,undo:[],view:{x:80,y:90,z:1.2},result:null,frame:0,playing:false,worker:null};
 let gesture=null, candidate=null, playback=0;
 let chartResult, chartNode, chartLanguage;
 const canvas=$('canvas'), world=$('world');
@@ -168,10 +168,10 @@ function snap(raw){
   if(candidates.length)return {...candidates[0].p,snapped:true};const free={...raw,snapped:false};delete free.anchor;delete free.side;return free;
 }
 function transform(){world.style.transform=`translate(${s.view.x}px,${s.view.y}px) scale(${s.view.z})`;$('zoom').textContent=`${Math.round(s.view.z*100)}%`;}
-function fit(){if(!s.parts.length){s.view={x:80,y:90,z:1};transform();return;}
+function fit(){if(!s.parts.length){s.view={x:80,y:90,z:1.2};transform();return;}
   const minx=Math.min(...s.parts.map(p=>p.x)),miny=Math.min(...s.parts.map(p=>p.y));
   const w=Math.max(...s.parts.map(p=>p.x+p.w))-minx,h=Math.max(...s.parts.map(p=>p.y+p.h))-miny;
-  const z=Math.max(.15,Math.min(1.5,(canvas.clientWidth-100)/w,(canvas.clientHeight-100)/h));
+  const z=Math.max(.15,Math.min(2,(canvas.clientWidth-100)/w,(canvas.clientHeight-100)/h));
   s.view={z,x:(canvas.clientWidth-w*z)/2-minx*z,y:(canvas.clientHeight-h*z)/2-miny*z};transform();}
 function zoom(factor,cx=canvas.clientWidth/2,cy=canvas.clientHeight/2){const old=s.view.z,z=Math.max(.15,Math.min(3,old*factor));s.view.x=cx-(cx-s.view.x)*z/old;s.view.y=cy-(cy-s.view.y)*z/old;s.view.z=z;transform();}
 const thermalColors=[[24,20,49],[57,26,95],[102,35,111],[151,47,105],[199,67,82],[233,105,61],[249,155,55],[249,205,94],[249,242,184]];

@@ -33,3 +33,20 @@ html[lang="zh-CN"] body,html[lang="zh-CN"] input,html[lang="zh-CN"] button,html[
 .field-top{height:50px}
 #scaleToggle{min-height:44px;padding:8px 14px;font-size:12px;font-weight:700;color:#225b83;background:#f3f8fc;border-color:#c6dce9;white-space:nowrap}
 #scaleToggle:hover{background:#e5f1f8;border-color:#96bed4}
+
+main { max-width: 1780px; }
+.feature-pill, .stats>div { border-radius: 7px; }
+.export-actions button { border-radius: 6px; min-height: 36px; }
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid #16879f;
+  outline-offset: 3px;
+}
+@media (min-width: 1450px) {
+  .control label { font-size: 14px; }
+  .input-value input { font-size: 31px; }
+  .stats strong { font-size: 27px; }
+  .stats span { font-size: 12px; }
+  .export-actions button { font-size: 12px; }
+  .vehicle-toolbar { font-size: 12px; }
+  .network-label, .network-legend { font-size: 11px; }
+}

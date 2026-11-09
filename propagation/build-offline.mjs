@@ -23,8 +23,9 @@ function createWorker() {
   return new Worker(offlineWorkerUrl);
 }`);
 const offline = html
-  .replace('<link rel="stylesheet" href="../suite.css">', () => `<style>${inlineSuite}</style>`)
-  .replace('<link rel="stylesheet" href="./lab.css">', () => `<style>${css}</style>`)
+  .replace(/<link rel="stylesheet" href="\.\.\/suite\.css(?:\?[^"]*)?">/, () => `<style>${inlineSuite}</style>`)
+  .replace(/<link rel="stylesheet" href="\.\/lab\.css(?:\?[^"]*)?">/, () => `<style>${css}</style>`)
+  .replace(/<section class="visitor-panel"[\s\S]*?<\/section>/, '')
   .replaceAll('href="../cooling/"', 'href="https://andyyongxiwu.github.io/battery-cooling-explainer/cooling/"')
   .replaceAll('href="./model-audit.md"', 'href="https://andyyongxiwu.github.io/battery-cooling-explainer/propagation/model-audit.md"')
   .replaceAll('href="./"', 'href="#"')

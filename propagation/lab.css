@@ -63,6 +63,78 @@
 .scale-ramp { height: 25px; }
 .scale-ticks { height: 26px; font-size: 13px; font-weight: 750; }
 .scale-ticks span::before { height: 6px; }
+/* Clearer control hierarchy and a roomier research workspace. */
+body { background: #edf3f7; font-size: 16px; }
+main { gap: 20px; padding-top: 26px; align-items: start; }
+aside, .workspace {
+  border-color: #b6ccd9;
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgb(29 63 85 / 5%);
+}
+aside { background: #f9fbfd; }
+aside h2 { background: #e3edf4; font-size: 18px; border-radius: 9px 9px 0 0; }
+.toolbar { background: #f2f7fb; padding: 12px 14px; gap: 12px; }
+.toolbar button { min-height: 38px; font-size: 14px; border-radius: 6px; }
+.toolbar button.active { box-shadow: 0 2px 5px rgb(17 72 106 / 16%); }
+button { transition: background-color .15s, border-color .15s, box-shadow .15s; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: 2px solid #16879f;
+  outline-offset: 3px;
+}
+button:disabled { cursor: default; }
+.part { border-width: 1px; border-left-width: 4px; border-radius: 7px; min-height: 82px; }
+.part:hover { transform: none; background: #edf5fa; box-shadow: 0 3px 10px rgb(29 63 85 / 8%); }
+.part span { font-size: 16px; }
+.part small { font-size: 12px; }
+.part.active { border-color: #328099; background: #e4f0f5; }
+.library>p, .inspector>p { font-size: 14px; }
+.default-size h3, .size-row label, .convection, .duration, #thicknessField { font-size: 14px; }
+.size-row input, .duration-value input, #thickness, .example-panel select {
+  min-height: 40px;
+  border: 1px solid #adc5d4;
+  border-radius: 6px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.library>button:not(.part), .actions button { min-height: 36px; font-size: 13px; }
+.example-panel summary { font-size: 15px; font-weight: 700; padding-block: 5px; }
+.example-panel label { display: block; margin-top: 8px; font-size: 13px; }
+.example-panel button { min-height: 38px; }
+#canvas { height: clamp(500px, 58svh, 720px); background-color: #f7fafc; }
+#empty h2 { font-size: 22px; }
+#empty .empty-symbol { font-size: 56px; }
+.statusbar { padding: 12px 18px; font-size: 13px; }
+.timeline { padding: 18px 20px 4px; gap: 12px; }
+.timeline button { min-width: 42px; min-height: 40px; }
+.timeline output { font-variant-numeric: tabular-nums; }
+.thermal-legend { margin-block: 22px 28px; }
+.scale-ramp { border: 1px solid #8897a2; border-radius: 5px; }
+.notes { border-radius: 8px; padding: 17px 20px; background: #f8fbfd; }
+.notes summary { font-size: 14px; }
+.notes[open] { background: white; }
+@media (min-width: 1450px) {
+  main { grid-template-columns: 250px minmax(300px, 1fr) 270px; }
+}
+@media (min-width: 651px) and (max-width: 1250px) {
+  .inspector { flex-wrap: wrap; }
+  .inspector h2 { border-radius: 0; }
+}
+@media (max-width: 650px) {
+  body { font-size: 15px; }
+  main { padding-top: 16px; gap: 14px; }
+  .library h2 { border-radius: 9px 9px 0 0; }
+  .part { min-height: 64px; }
+  .part span { font-size: 13px; }
+  .toolbar { padding: 10px; gap: 8px; }
+  .toolbar>div { flex-wrap: wrap; }
+  .toolbar button { font-size: 13px; padding-inline: 8px; }
+  #canvas { height: 460px; }
+  .statusbar { flex-wrap: wrap; }
+  .timeline { padding-inline: 12px; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button, .part { transition: none; }
+}
 @media (max-width: 760px) {
   main { padding-top: 24px; }
   .studio-slogan { font-size: 1.2rem; }
