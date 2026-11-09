@@ -72,11 +72,24 @@ function sourceConvection(profile, i, h) {
   return cellConvection({x: Number(column === 0 || column === lastColumn), y: profile === 'trn6' ? 2 : 1, z: 1}, h);
 }
 
+export function physicalDimensions(part) {
+  if (part.type === 'cell' || !part.displayScale) return {w: part.w, h: part.h};
+  return part.axis === 'y'
+    ? {w: part.w, h: part.h / part.displayScale}
+    : {w: part.w / part.displayScale, h: part.h};
+}
+
 // Freeform plan geometry uses reference units, not physical millimetres.
 // 40 x 140 is the UI reference footprint for the supplied 720 g cell.
 export function buildGeometryNetwork(parts, h = sourceProfiles.trn25.h) {
   const reference = {cell: 40 * 140, pcm: 16 * 140, fr: 8 * 140};
-  const nodes = parts.map(p => ({...p, slot: p.id, scale: p.w * p.h / reference[p.type]}));
+  // Find contacts in the editor layout, but use physical dimensions for thermal terms.
+  const physical = parts.map(physicalDimensions);
+  const nodes = parts.map((part, i) => ({
+    ...part,
+    slot: part.id,
+    scale: physical[i].w * physical[i].h / reference[part.type],
+  }));
   const links = [];
   const exposed = nodes.map(p=>({x:2,y:2,z:1}));
   for (let a = 0; a < nodes.length; a++) for (let b = a + 1; b < nodes.length; b++) {
@@ -89,12 +102,17 @@ export function buildGeometryNetwork(parts, h = sourceProfiles.trn25.h) {
     const length = vertical && dy>0.01 ? dy : horizontal && dx>0.01 ? dx : 0;
     if (!length) continue;
     const axis=vertical?'x':'y';
-    exposed[a][axis]-=length/(vertical?p.h:p.w);exposed[b][axis]-=length/(vertical?q.h:q.w);
-    const depth = n => n.type === 'cell' ? 1 : (vertical ? n.w : n.h)/(n.type === 'pcm' ? 16 : 8);
-    const half=n=>n.type==='cell'?axisResistance[axis]*(vertical?n.w/40:n.h/140):resistance[n.type]*depth(n);
-    let r = half(p)+half(q);
-    if(p.type==='cell'||q.type==='cell') r+=contact;
-    links.push({a,b,conductance: faceArea[axis] * length / (vertical?140:40) / r, kind:'contact'});
+    const depth = vertical ? 'w' : 'h';
+    const tangent = vertical ? 'h' : 'w';
+    const halfResistance = (part, dimensions) => part.type === 'cell'
+      ? axisResistance[axis] * dimensions[depth] / (vertical ? 40 : 140)
+      : resistance[part.type] * dimensions[depth] / (part.type === 'pcm' ? 16 : 8);
+    let r = halfResistance(p, physical[a]) + halfResistance(q, physical[b]);
+    if (p.type === 'cell' || q.type === 'cell') r += contact;
+    const physicalLength = length * Math.min(physical[a][tangent] / p[tangent], physical[b][tangent] / q[tangent]);
+    exposed[a][axis] -= physicalLength / physical[a][tangent];
+    exposed[b][axis] -= physicalLength / physical[b][tangent];
+    links.push({a, b, conductance: faceArea[axis] * physicalLength / (vertical ? 140 : 40) / r, kind:'contact'});
   }
   nodes.forEach((node, i) => {
     if (node.type === 'cell') {

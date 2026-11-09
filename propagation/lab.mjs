@@ -1,11 +1,14 @@
-import {buildGeometryNetwork,sourceLayout,sourceMatches,sourceProfiles} from './solver.mjs';
+import {buildGeometryNetwork,sourceLayout,sourceMatches,sourceProfiles,physicalDimensions} from './solver.mjs';
 const $ = id => document.getElementById(id);
-const types = {cell:{w:40,h:140},pcm:{w:16,h:140,thickness:16,axis:'x'},fr:{w:8,h:140,thickness:8,axis:'x'}};
-const exampleLayers = {
-  bare: [],
-  pcm: ['pcm'],
-  pcmPair: ['pcm'],
-  hybrid: ['pcm', 'fr'],
+const layerDisplayScale = 5;
+const layerDefaults = {pcm: 2, fr: 1};
+function materialDimensions(thickness) {
+  return {w: thickness * layerDisplayScale, h: 140, thickness, axis: 'x', displayScale: layerDisplayScale};
+}
+const types = {
+  cell: {w: 40, h: 140},
+  pcm: materialDimensions(layerDefaults.pcm),
+  fr: materialDimensions(layerDefaults.fr),
 };
 let lang = new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'zh';
 const tr = (zh,en) => lang === 'zh' ? zh : en;
@@ -30,7 +33,9 @@ function snap(raw){
       const p={...raw};const vertical=side==='left'||side==='right';
       if(p.type!=='cell'){
         const thickness=raw.thickness??Math.min(raw.w,raw.h);p.thickness=thickness;p.axis=vertical?'x':'y';p.anchor=q.id;p.side=side;
-        p.w=vertical?thickness:q.w;p.h=vertical?q.h:thickness;
+        const displayThickness = thickness * (raw.displayScale ?? 1);
+        p.w = vertical ? displayThickness : q.w;
+        p.h = vertical ? q.h : displayThickness;
       }
       if(vertical){p.x=side==='left'?q.x-p.w:q.x+q.w;p.y=raw.type==='cell'?raw.y:q.y;
         if(raw.type==='cell'&&Math.abs(raw.y-q.y)<threshold)p.y=q.y;
@@ -60,10 +65,15 @@ function zoom(factor,cx=canvas.clientWidth/2,cy=canvas.clientHeight/2){const old
 const thermalColors=[[24,20,49],[57,26,95],[102,35,111],[151,47,105],[199,67,82],[233,105,61],[249,155,55],[249,205,94],[249,242,184]];
 function shade(k){const t=Math.max(0,Math.min(1,(k-298.15)/775))*(thermalColors.length-1),i=Math.min(thermalColors.length-2,Math.floor(t));return `rgb(${thermalColors[i].map((v,j)=>Math.round(v+(thermalColors[i+1][j]-v)*(t-i))).join(',')})`;}
 
-function drawPart(p,ghost=false){const el=document.createElement('div');el.className=`block ${p.type} ${p.type!=='cell'?'material':''} ${p.w>p.h?'horizontal':''}`;el.dataset.id=p.id;
+function drawPart(p,ghost=false){const el=document.createElement('div');el.className=`block ${p.type} ${p.type!=='cell'?'material':''} ${(p.type === 'cell' ? p.w > p.h : p.axis === 'y') ? 'horizontal' : ''}`;el.dataset.id=p.id;
   Object.assign(el.style,{left:p.x+'px',top:p.y+'px',width:p.w+'px',height:p.h+'px'});
-  if(p.type==='cell'){const shell=document.createElement('div');shell.className='cell-detail';shell.setAttribute('aria-hidden','true');shell.innerHTML='<div class="case-seam"></div><div class="terminal positive"><i></i><b>+</b></div><div class="vent"></div><div class="terminal negative"><i></i><b>−</b></div>';el.append(shell);el.classList.toggle('slender',Math.min(p.w,p.h)/Math.max(p.w,p.h)<.45);}
-  const text=document.createElement('span');text.className='block-label';text.textContent=p.type==='cell'?label(p):p.type.toUpperCase();el.append(text);
+  if(p.type==='cell'){const shell=document.createElement('div');shell.className='cell-detail';shell.setAttribute('aria-hidden','true');shell.innerHTML='<div class="case-seam"></div><div class="terminal positive"><i></i></div><div class="vent"></div><div class="terminal negative"><i></i></div>';el.append(shell);el.classList.toggle('slender',Math.min(p.w,p.h)/Math.max(p.w,p.h)<.45);}
+  const text=document.createElement('span');text.className='block-label';text.textContent=p.type==='cell'?label(p):p.type.toUpperCase();
+  if (p.type === 'fr' && (p.axis === 'y' ? p.h : p.w) < 10) {
+    text.hidden = true;
+    el.title = 'FR';
+  }
+  el.append(text);
   if(ghost){el.classList.add('ghost');if(p.snapped)el.classList.add('snapped');if(!valid(p))el.classList.add('invalid');}
   else{el.classList.toggle('selected',s.selected===p.id);el.setAttribute('role','button');el.tabIndex=0;el.setAttribute('aria-label',label(p));
     const i=s.result?.nodes.findIndex(n=>n.id===p.id);if(i!==undefined&&i>=0){const t=s.result.frames[s.frame][i];el.style.background=shade(t);el.style.color=t<850?'white':'#29202b';if(p.type==='cell'){const out=document.createElement('small');out.textContent=(t-273.15).toFixed(1)+' °C';el.append(out);}el.classList.toggle('hot',s.result.events[i]!==null&&s.result.events[i]<=s.result.times[s.frame]);}}
@@ -73,7 +83,7 @@ function render(){world.replaceChildren();s.parts.forEach(p=>drawPart(p));if(can
   $('loadExample').disabled = !$('example').value || s.mode === 'running';
   $('duration').disabled = s.mode === 'running';
   $('edit').classList.toggle('active',s.mode==='build');$('arm').classList.toggle('active',s.mode==='arm');$('arm').disabled=!s.parts.some(p=>p.type==='cell')||s.mode==='running';$('undo').disabled=!s.undo.length||s.mode!=='build';
-  $('instruction').textContent={build:tr('拖入组件，靠近边缘自动吸附。','Drag components. Nearby edges snap together.'),arm:tr('点击一颗电芯，开始模拟。','Click a cell to start simulation.'),running:tr('正在计算，可点击搭建取消。','Computing. Click Build to cancel.'),view:tr('拖动时间轴，查看温度与传播过程。','Scrub the timeline to explore propagation.')}[s.mode];
+  $('instruction').textContent={build:'',arm:tr('点击一颗电芯，开始模拟。','Click a cell to start simulation.'),running:tr('正在计算，可点击搭建取消。','Computing. Click Build to cancel.'),view:tr('拖动时间轴，查看温度与传播过程。','Scrub the timeline to explore propagation.')}[s.mode];
   let links=[];try{links=buildGeometryNetwork(s.parts).links;}catch{}
   const convectionInput = $('convection');
   const defaultConvection = String((sourceProfiles[s.profile] ?? sourceProfiles.trn25).h);
@@ -82,10 +92,9 @@ function render(){world.replaceChildren();s.parts.forEach(p=>drawPart(p));if(can
     convectionInput.defaultValue = defaultConvection;
   }
   convectionInput.disabled = s.mode === 'running';
-  $('physicsProfile').textContent = s.profile === 'trn6' ? 'TRN.py' : s.profile === 'trn25' ? 'TRN_3D.py' : tr('自由搭建 · TRN_3D.py 参数','Custom layout · TRN_3D.py parameters');
   $('count').textContent=tr(`${s.parts.length} 个组件 · ${links.length} 处接触`,`${s.parts.length} parts · ${links.length} contacts`);
   const p=selected();$('selection').textContent=p?label(p):tr('点选一个组件，查看或编辑。','Select a component to inspect or edit.');$('properties').hidden=!p;
-  if(p){$('width').value=p.w;$('height').value=p.h;$('width').disabled=$('height').disabled=s.mode!=='build'||p.type!=='cell';$('thicknessField').hidden=p.type==='cell';$('thickness').value=p.thickness??Math.min(p.w,p.h);$('thickness').disabled=s.mode!=='build';$('rotate').disabled=$('remove').disabled=s.mode!=='build';const i=s.parts.indexOf(p);$('contacts').textContent=tr(`接触邻居：${links.filter(l=>l.a===i||l.b===i).length}`,`Touching neighbours: ${links.filter(l=>l.a===i||l.b===i).length}`);}
+  if(p){const dimensions=physicalDimensions(p);$('width').value=dimensions.w;$('height').value=dimensions.h;$('width').disabled=$('height').disabled=s.mode!=='build'||p.type!=='cell';$('thicknessField').hidden=p.type==='cell';$('thickness').value=p.thickness??Math.min(dimensions.w,dimensions.h);$('thickness').min=4/(p.displayScale??1);$('thickness').max=600/(p.displayScale??1);$('thickness').disabled=s.mode!=='build';$('rotate').disabled=$('remove').disabled=s.mode!=='build';const i=s.parts.indexOf(p);$('contacts').textContent=tr(`接触邻居：${links.filter(l=>l.a===i||l.b===i).length}`,`Touching neighbours: ${links.filter(l=>l.a===i||l.b===i).length}`);}
   renderTime();}
 function drawHistory(result, node) {
   if (chartResult === result && chartNode === node && chartLanguage === lang) return;
@@ -147,11 +156,11 @@ window.addEventListener('pointerup',e=>{if(!gesture||gesture.pointer!==e.pointer
   if(g.kind==='part'){
     if(g.moved&&candidate&&inside(e)&&valid(candidate)){
       if(g.source==='library'&&s.parts.length>=80){$('status').textContent=tr('当前最多支持 80 个组件。','This version supports up to 80 components.');candidate=null;render();return;}
-      remember();const p={id:candidate.id,type:candidate.type,x:candidate.x,y:candidate.y,w:candidate.w,h:candidate.h,...(candidate.type!=='cell'?{thickness:candidate.thickness??Math.min(candidate.w,candidate.h),axis:candidate.axis??(candidate.w<candidate.h?'x':'y'),anchor:candidate.anchor,side:candidate.side}:{})};
+      remember();const p={id:candidate.id,type:candidate.type,x:candidate.x,y:candidate.y,w:candidate.w,h:candidate.h,...(candidate.type!=='cell'?{thickness:candidate.thickness??Math.min(candidate.w,candidate.h),axis:candidate.axis??(candidate.w<candidate.h?'x':'y'),anchor:candidate.anchor,side:candidate.side,displayScale:candidate.displayScale}:{})};
       if(g.source==='library'){s.parts.push(p);s.next++;}else s.parts[s.parts.findIndex(q=>q.id===p.id)]=p;s.selected=p.id;s.tool=null;
     }else if(!g.moved){if(g.source==='world'){s.selected=g.p.id;s.tool=null;}else s.tool=g.p.type;}
   }else if(g.kind==='place'&&!g.moved&&s.tool&&inside(e)){
-    const pt=point(e),d=types[s.tool],p=snap({id:s.next,type:s.tool,w:d.w,h:d.h,x:pt.x-d.w/2,y:pt.y-d.h/2});
+    const pt=point(e),d=types[s.tool],p=snap({...d,id:s.next,type:s.tool,x:pt.x-d.w/2,y:pt.y-d.h/2});
     if(valid(p)&&s.parts.length<80){remember();delete p.snapped;s.parts.push(p);s.selected=p.id;s.next++;s.tool=null;}
   }else if(!g.moved){s.selected=null;s.tool=null;}
   candidate=null;commit();});
@@ -172,23 +181,21 @@ function run(ignition){const duration=$('duration').valueAsNumber;if(!$('duratio
   w.postMessage({parts:s.parts,ignition,duration,profile:s.profile,convectionCoefficient:$('convection').valueAsNumber});}
 function play(){if(!s.result)return;s.playing=!s.playing;cancelAnimationFrame(playback);if(s.playing){if(s.frame===s.result.times.length-1)s.frame=0;let last=performance.now(),time=s.result.times[s.frame];const tick=now=>{if(!s.playing)return;time+=(now-last)/1000*+$('speed').value;last=now;while(s.frame<s.result.times.length-1&&s.result.times[s.frame+1]<=time)s.frame++;if(s.frame===s.result.times.length-1)s.playing=false;render();if(s.playing)playback=requestAnimationFrame(tick);};playback=requestAnimationFrame(tick);}renderTime();}
 $('play').onclick=play;$('scrub').oninput=()=>{s.playing=false;cancelAnimationFrame(playback);s.frame=+$('scrub').value;render();};$('edit').onclick=()=>{cancel();s.tool=null;render();};$('arm').onclick=()=>{cancel();s.tool=null;s.mode='arm';render();};$('clear').onclick=()=>{cancel();remember();s.parts=[];s.selected=null;s.tool=null;commit();};$('undo').onclick=undo;$('rotate').onclick=rotate;$('remove').onclick=remove;$('fit').onclick=fit;$('zoomin').onclick=()=>zoom(1.2);$('zoomout').onclick=()=>zoom(1/1.2);$('language').onclick=()=>{lang=lang==='zh'?'en':'zh';language();};$('duration').onchange=$('convection').onchange=()=>{cancel();render();};
-$('save').onclick=()=>{const blob=new Blob([JSON.stringify({version:2,parts:s.parts,profile:s.profile??null},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='battery-pack-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};$('load').onclick=()=>$('file').click();
+$('save').onclick=()=>{const blob=new Blob([JSON.stringify({version:3,parts:s.parts,profile:s.profile??null},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='battery-pack-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};$('load').onclick=()=>$('file').click();
 $('example').onchange = () => { $('loadExample').disabled = !$('example').value || s.mode === 'running'; };
 $('loadExample').onclick = () => {
   const key=$('example').value, isSource=key==='trn6'||key==='trn25';
-  const layers = exampleLayers[key];
-  if ((!layers&&!isSource) || s.mode === 'running') return;
+  if ((!isSource && key !== 'hybrid') || s.mode === 'running') return;
   if (s.parts.length && !confirm(tr('载入示例会替换当前布局，可以用撤销恢复。继续？', 'Load this example and replace your current layout? You can undo this change.'))) return;
 
   cancel();
   remember();
   const sequence = ['cell'];
-  const cellCount = key === 'pcmPair' ? 2 : 6;
-  for (let index = 1; index < cellCount; index++) sequence.push(...(layers??[]), 'cell');
+  for (let index = 1; index < 6; index++) sequence.push('pcm', 'fr', 'cell');
   let x = 0;
   s.next=1;
   s.parts = sequence.map(type => {
-    const dimensions = type === 'cell' ? {w:40, h:140} : {w:type === 'pcm' ? 16 : 8, h:140, axis:'x'};
+    const dimensions = type === 'cell' ? {w:40, h:140} : materialDimensions(layerDefaults[type]);
     const part = {type, id:s.next++, x, y:0, ...dimensions};
     x += part.w;
     return part;
@@ -196,15 +203,51 @@ $('loadExample').onclick = () => {
   s.profile=isSource?key:null;
   $('convection').value = (sourceProfiles[s.profile] ?? sourceProfiles.trn25).h;
   if(isSource){s.parts=sourceLayout(key);s.next=s.parts.length+1;$('duration').value=key==='trn6'?1500:4000;}
-  if (key === 'pcmPair') $('duration').value = 4000;
+  if (!isSource) $('duration').value = 4000;
   s.tool = null;
   s.selected = s.parts[0].id;
   $('example').value = '';
   commit();
   fit();
 };
-$('file').onchange=async()=>{try{const data=JSON.parse(await $('file').files[0].text()),parts=data.parts;if(!Array.isArray(parts)||parts.length>80)throw Error('Invalid layout');const ids=new Set();for(const p of parts){if(!types[p.type]||!Number.isInteger(p.id)||p.id<1||ids.has(p.id)||![p.x,p.y,p.w,p.h].every(Number.isFinite)||Math.min(p.w,p.h)<4||Math.max(p.w,p.h)>600||Math.max(Math.abs(p.x),Math.abs(p.y))>100000)throw Error('Invalid component');ids.add(p.id);}buildGeometryNetwork(parts);cancel();remember();s.parts=parts.map(({id,type,x,y,w,h,axis})=>({id,type,x,y,w,h,...(type!=='cell'?{axis:axis==='y'?'y':axis==='x'?'x':w<h?'x':'y',thickness:axis==='y'?h:axis==='x'?w:Math.min(w,h)}:{})}));s.next=Math.max(0,...parts.map(p=>p.id))+1;s.profile=sourceMatches(s.parts,data.profile)?data.profile:null;s.selected=null;commit();fit();}catch(e){$('status').textContent=tr('无法导入：','Import failed: ')+e.message;}$('file').value='';};
+$('file').onchange=async()=>{try{const data=JSON.parse(await $('file').files[0].text()),parts=data.parts;if(!Array.isArray(parts)||parts.length>80)throw Error('Invalid layout');const ids=new Set();for(const p of parts){if(!types[p.type]||!Number.isInteger(p.id)||p.id<1||ids.has(p.id)||![p.x,p.y,p.w,p.h].every(Number.isFinite)||Math.min(p.w,p.h)<4||Math.max(p.w,p.h)>600||Math.max(Math.abs(p.x),Math.abs(p.y))>100000)throw Error('Invalid component');ids.add(p.id);}buildGeometryNetwork(parts);cancel();remember();s.parts=parts.map(({id,type,x,y,w,h,axis,displayScale})=>{
+  const part={id,type,x,y,w,h};
+  if(type==='cell')return part;
+  part.axis=axis==='x'||axis==='y'?axis:(w<h?'x':'y');
+  part.displayScale=data.version===3&&displayScale===layerDisplayScale?layerDisplayScale:1;
+  part.thickness=(part.axis==='y'?h:w)/part.displayScale;
+  return part;
+});s.next=Math.max(0,...parts.map(p=>p.id))+1;s.profile=sourceMatches(s.parts,data.profile)?data.profile:null;s.selected=null;commit();fit();}catch(e){$('status').textContent=tr('无法导入：','Import failed: ')+e.message;}$('file').value='';};
 for(const id of ['defaultWidth','defaultHeight'])$(id).onchange=()=>{const w=+$('defaultWidth').value,h=+$('defaultHeight').value;if(Number.isFinite(w+h)&&Math.min(w,h)>=4&&Math.max(w,h)<=600){types.cell.w=w;types.cell.h=h;$('cellSize').textContent=`${w} × ${h}`;}else{$('defaultWidth').value=types.cell.w;$('defaultHeight').value=types.cell.h;}};
-for(const type of ['pcm','fr'])$(type+'Thickness').onchange=()=>{const v=+$(type+'Thickness').value;if(Number.isFinite(v)&&v>=4&&v<=600){types[type].w=v;types[type].thickness=v;}else $(type+'Thickness').value=types[type].thickness;};
-$('thickness').onchange=()=>{const p=selected(),v=+$('thickness').value;if(!p||p.type==='cell'||s.mode!=='build')return;const axis=p.axis??(p.w<p.h?'x':'y'),q={...p,axis,thickness:v,[axis==='x'?'w':'h']:v};const anchor=s.parts.find(n=>n.id===p.anchor);if(anchor&&p.side==='left')q.x=anchor.x-v;if(anchor&&p.side==='top')q.y=anchor.y-v;if(!Number.isFinite(v)||v<4||v>600||!valid(q)){$('status').textContent=tr('厚度无效或会与其他组件重叠。','Invalid thickness or overlap with another component.');render();return;}remember();Object.assign(p,q);commit();};
+for (const type of ['pcm', 'fr']) {
+  const input = $(type + 'Thickness');
+  input.onchange = () => {
+    const thickness = input.valueAsNumber;
+    if (Number.isFinite(thickness) && input.checkValidity()) {
+      Object.assign(types[type], materialDimensions(thickness));
+    } else {
+      input.value = types[type].thickness;
+    }
+  };
+}
+$('thickness').onchange = () => {
+  const part = selected();
+  const input = $('thickness');
+  const thickness = input.valueAsNumber;
+  if (!part || part.type === 'cell' || s.mode !== 'build') return;
+  const axis = part.axis ?? (part.w < part.h ? 'x' : 'y');
+  const displayThickness = thickness * (part.displayScale ?? 1);
+  const next = {...part, axis, thickness, [axis === 'x' ? 'w' : 'h']: displayThickness};
+  const anchor = s.parts.find(node => node.id === part.anchor);
+  if (anchor && part.side === 'left') next.x = anchor.x - displayThickness;
+  if (anchor && part.side === 'top') next.y = anchor.y - displayThickness;
+  if (!Number.isFinite(thickness) || !input.checkValidity() || !valid(next)) {
+    input.value = part.thickness;
+    input.animate([{borderColor: '#b64c36'}, {borderColor: '#c9d7e3'}], {duration: 450});
+    return;
+  }
+  remember();
+  Object.assign(part, next);
+  commit();
+};
 language();fit();$('startup').hidden=true;
